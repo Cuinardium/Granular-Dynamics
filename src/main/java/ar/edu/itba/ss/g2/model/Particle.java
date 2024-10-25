@@ -3,58 +3,110 @@ package ar.edu.itba.ss.g2.model;
 public class Particle {
     private int id;
 
-    private Double position;
-    private Double velocity;
-    private Double acceleration;
+    private Double x;
+    private Double vx;
+    private Double ax;
+
+    private Double y;
 
     private final Double mass;
+    private final Double radius;
 
-    public Particle(int id, Double position, Double v, Double acceleration, Double mass) {
+    public Particle(
+            int id,
+            Double x,
+            Double vx,
+            Double ax,
+            Double y,
+            Double vy,
+            Double ay,
+            Double mass,
+            Double radius) {
         this.id = id;
-        this.position = position;
-        this.velocity = v;
-        this.acceleration = acceleration;
+        this.x = x;
+        this.vx = vx;
+        this.ax = ax;
+        this.y = y;
+        this.vy = vy;
+        this.ay = ay;
         this.mass = mass;
+        this.radius = radius;
     }
 
     public Particle(Particle particle) {
         this.id = particle.id;
-        this.position = particle.position;
-        this.velocity = particle.velocity;
-        this.acceleration = particle.acceleration;
+        this.x = particle.x;
+        this.vx = particle.vx;
+        this.ax = particle.ax;
+        this.y = particle.y;
+        this.vy = particle.vy;
+        this.ay = particle.ay;
         this.mass = particle.mass;
+        this.radius = particle.radius;
     }
 
     public int getId() {
         return id;
     }
 
-    public Double getPosition() {
-        return position;
+    public Double getX() {
+        return x;
     }
 
-    public Double getVelocity() {
-        return velocity;
+    public Double getVx() {
+        return vx;
     }
 
-    public Double getAcceleration() {
-        return acceleration;
+    public Double getAx() {
+        return ax;
     }
 
     public Double getMass() {
         return mass;
     }
 
-    public void setPosition(Double position) {
-        this.position = position;
+    public void setX(Double x) {
+        this.x = x;
     }
 
-    public void setVelocity(Double velocity) {
-        this.velocity = velocity;
+    public void setVx(Double vx) {
+        this.vx = vx;
     }
 
-    public void setAcceleration(Double acceleration) {
-        this.acceleration = acceleration;
+    public void setAx(Double ax) {
+        this.ax = ax;
+    }
+
+    public Double getY() {
+        return y;
+    }
+
+    public void setY(Double y) {
+        this.y = y;
+    }
+
+    private Double vy;
+
+    public Double getVy() {
+        return vy;
+    }
+
+    public void setVy(Double vy) {
+        this.vy = vy;
+    }
+
+    private Double ay;
+
+    public Double getAy() {
+        return ay;
+    }
+
+    public void setAy(Double ay) {
+        this.ay = ay;
+    }
+
+    public Double getRadius() {
+        return radius;
     }
 
     @Override
@@ -62,13 +114,32 @@ public class Particle {
         return "Particle{"
                 + "id="
                 + id
-                + ", position="
-                + position
-                + ", v="
-                + velocity
+                + ", x="
+                + x
+                + ", vx="
+                + vx
+                + ", ax="
+                + ax
+                + ", y="
+                + y
+                + ", vy="
+                + vy
+                + ", ay="
+                + ay
                 + ", mass="
                 + mass
+                + ", radius="
+                + radius
                 + '}';
+    }
+
+    public boolean overlaps(Particle other) {
+        double otherX = other.getX();
+        double otherY = other.getY();
+
+        double distance = Math.sqrt(Math.pow(x - otherX, 2) + Math.pow(y - otherY, 2));
+
+        return distance < radius + other.getRadius();
     }
 
     @Override
