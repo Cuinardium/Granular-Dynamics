@@ -72,6 +72,7 @@ public class Simulation {
     takeSnapshot();
 
     currentTime = 0;
+    double elapsed = 0;
 
     while (currentTime < maxTime) {
       integrate();
@@ -79,9 +80,11 @@ public class Simulation {
       checkDischarges();
 
       currentTime += integrationStep;
+      elapsed += integrationStep;
 
-      if (currentTime % snapshotStep == 0) {
+      if (elapsed >= snapshotStep) {
         takeSnapshot();
+        elapsed = 0;
       }
     }
   }
@@ -110,7 +113,7 @@ public class Simulation {
       Map<Particle, Set<Particle>> neighbours = getParticleNeighbours();
       Map<Particle, Set<Particle>> obstacles = getObstacleNeighbours();
 
-      double[] force = {0, acceleration * particle.getMass()};
+      double[] force = {acceleration * particle.getMass(), 0};
 
       double[] particleForces = calculateParticleCollision(particle, neighbours.get(particle));
       double[] obstacleForces = calculateObstacleCollision(particle, obstacles.get(particle));
@@ -168,8 +171,8 @@ public class Simulation {
       double normalForce = -normalK * overlap;
       double tangentialForce = -tangentialK * overlap * relativeVTangential;
 
-      forces[X] += normalForce * normal[X] + tangentialForce * tangential[X];
-      forces[Y] += normalForce * normal[Y] + tangentialForce * tangential[Y];
+      forces[X] += normalForce * -normal[X] + tangentialForce * tangential[X];
+      forces[Y] += normalForce * -normal[Y] + tangentialForce * tangential[Y];
     }
 
     return forces;
@@ -184,23 +187,29 @@ public class Simulation {
 
   // - Horizontal Wall
 
+  // TODO: Dampening
   private double[] calculateHorizontalWallCollision(Particle particle) {
     double[] forces = new double[2];
 
     double y = particle.getY();
     double radius = particle.getRadius();
 
+    
+    // Bottom wall at width=0
     double overlap = radius - y;
-
-    if (overlap <= 0) {
+    if (overlap > 0) {
+      forces[Y] = normalK * overlap;
       return forces;
     }
 
-    double relativeVNormal = particle.getVy();
+    // Top wall at width=width
+    overlap = radius - (width - y);
+    if (overlap > 0) {
+      forces[Y] = -normalK * overlap;
+      return forces;
+    }
 
-    // TODO: Dampening
-    forces[Y] = -normalK * overlap;
-
+    // No collision
     return forces;
   }
 
@@ -217,8 +226,8 @@ public class Simulation {
 
     // TODO: Cell index method
     Set<Particle> obstacleSet = new HashSet<>(obstacles);
-    return obstacleSet.stream()
-        .collect(Collectors.toMap(obstacle -> obstacle, obstacle -> obstacleSet));
+    return particles.stream()
+        .collect(Collectors.toMap(particle -> particle, particle -> obstacleSet));
   }
 
   // ======= Discharges ================
@@ -229,9 +238,9 @@ public class Simulation {
 
       // Only in x, if discharged, periodic boundary conditions
       if (particle.getX() < 0) {
-        particle.setX(width + particle.getX());
+        particle.setX(length + particle.getX());
       } else if (particle.getX() > length) {
-        particle.setX(particle.getX() - width);
+        particle.setX(particle.getX() - length);
         dischargeTimes.add(currentTime);
       }
     }
