@@ -48,7 +48,7 @@ public class FileUtil {
         }
 
         try (FileWriter writer = new FileWriter(directory + "/obstacles.txt")) {
-            writer.write(obstacles.size() + '\n');
+            writer.write(obstacles.size() + "\n");
 
             for (Particle obstacle : obstacles) {
                 writer.write(String.format("%.5f %.5f\n", obstacle.getX(), obstacle.getY()));
@@ -65,7 +65,7 @@ public class FileUtil {
         }
 
         try (FileWriter writer = new FileWriter(directory + "/discharges.txt")) {
-            writer.write(dischargeTimes.size() + '\n');
+            writer.write(dischargeTimes.size() + "\n");
 
             for (Double t : dischargeTimes) {
                 writer.write(String.format("%.5f\n", t));
