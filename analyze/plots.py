@@ -3,20 +3,22 @@ import matplotlib.animation as animation
 import numpy as np
 
 
-def plot_cumulative_discharges(discharge_times, file_path="discharges.png"):
-    discharge_times = sorted(discharge_times)
-
-    # Generate cumulative discharge count
-    cumulative_discharges = np.arange(1, len(discharge_times) + 1)
-
-    # Plot cumulative discharges over time
+def plot_cumulative_discharges(discharge_times_list, file_path="discharges.png"):
     plt.figure(figsize=(10, 6))
-    plt.plot(discharge_times, cumulative_discharges, marker="o", linestyle="-")
+
+    for discharge_times in discharge_times_list:
+        discharge_times = sorted(discharge_times)
+
+        # Generate cumulative discharge count
+        cumulative_discharges = np.arange(1, len(discharge_times) + 1)
+
+        # Plot cumulative discharges over time
+        plt.plot(discharge_times, cumulative_discharges, marker="o", linestyle="-")
+
     plt.xlabel("Tiempo (s)")
     plt.ylabel("Descargas")
 
     plt.grid(True)
-
     plt.savefig(file_path)
     plt.close()
 
