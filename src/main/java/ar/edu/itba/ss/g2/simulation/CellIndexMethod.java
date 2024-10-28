@@ -8,27 +8,29 @@ public class CellIndexMethod {
 
     private final int M;
     private final int L;
+    private final double rc;
 
-    public CellIndexMethod(int M, int L) {
+    public CellIndexMethod(int M, int L, double rc) {
         this.M = M;
         this.L = L;
+        this.rc = rc;
     }
 
     private List<List<Set<Particle>>> generateGrid(Set<Particle> particles) {
         List<List<Set<Particle>>> grid;
 
-        // M filas
-        grid = new ArrayList<>(M);
+        // M + 1 filas ( crece en x, es donde se presentan las condiciones periodicas de contorno)
+        grid = new ArrayList<>(M+1);
         for(int i = 0; i < M; i++) {
-            // M + 1 columnas (condiciones periodicas de contorno)
-            grid.add(new ArrayList<>(M+1));
+            // M columnas
+            grid.add(new ArrayList<>(M));
             // genero M HashSets
             for(int j = 0; j < M; j++) {
                 grid.get(i).add(new HashSet<>());
             }
-            // copio el 0 en el M+1
-            grid.set(M+1, grid.get(0));
         }
+        // copio la primer fila en la ultima
+        grid.set(M+1, grid.get(0));
 
         // agrego cada particula a su celda
         for(Particle p : particles) {
