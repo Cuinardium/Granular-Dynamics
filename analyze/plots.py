@@ -2,12 +2,12 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 
-def plot_flow_rate_vs_acceleration(A_values, mean_flow_rates, std_flow_rates, file_path="flow_rate_vs_acceleration.png"):
+def plot_X_vs_Y(Y_values, mean_X, std_X, file_path, X_label, Y_label):
     plt.figure(figsize=(10, 6))
-    plt.errorbar(A_values, mean_flow_rates, yerr=std_flow_rates, fmt='-o', capsize=5)
+    plt.errorbar(Y_values, mean_X, yerr=std_X, fmt='-o', capsize=5)
 
-    plt.xlabel("Aceleración (m/s²)")
-    plt.ylabel("Caudal (partículas/s)")
+    plt.xlabel(X_label)
+    plt.ylabel(Y_label)
 
     plt.grid(True)
     plt.savefig(file_path)
