@@ -29,6 +29,7 @@ public class Simulation {
     private final double integrationStep;
     private final double snapshotStep;
     private final double maxTime;
+    private final CellIndexMethod cellIndexMethod;
 
     private double currentTime;
 
@@ -65,6 +66,7 @@ public class Simulation {
         this.integrationStep = integrationStep;
         this.snapshotStep = snapshotStep;
         this.maxTime = maxTime;
+        this.cellIndexMethod = new CellIndexMethod((int) Math.ceil(length), (int) Math.ceil(width));
     }
 
     public void run() {

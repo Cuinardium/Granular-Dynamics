@@ -6,12 +6,17 @@ import java.util.*;
 
 public class CellIndexMethod {
 
-    private final int M;
-    private final int L;
+    private final int Mx;
+    private final int My;
+    private final int Lx;
+    private final int Ly;
 
-    public CellIndexMethod(int M, int L) {
-        this.M = M;
-        this.L = L;
+    public CellIndexMethod(int length, int width) {
+        // TODO: calculate this
+        this.Mx = 0;
+        this.My = 0;
+        this.Lx = 0;
+        this.Ly = 0;
     }
 
     public Map<Particle, Set<Particle>> getNeighbours(Set<Particle> particles) {
@@ -19,8 +24,8 @@ public class CellIndexMethod {
 
         List<List<Set<Particle>>> grid = generateGrid(particles);
 
-        for(int x = 0; x < M; x++) {
-            for(int y = 0; y < M; y++) {
+        for(int x = 0; x < Mx; x++) {
+            for(int y = 0; y < My; y++) {
                 for(Particle p : grid.get(x).get(y)) {
                     checkAdjacent(x, y, grid, p, map);
                 }
@@ -85,23 +90,23 @@ public class CellIndexMethod {
         List<List<Set<Particle>>> grid;
 
         // M + 1 filas ( crece en x, es donde se presentan las condiciones periodicas de contorno)
-        grid = new ArrayList<>(M+1);
-        for(int i = 0; i < M; i++) {
+        grid = new ArrayList<>(Mx+1);
+        for(int i = 0; i < Mx; i++) {
             // M columnas
-            grid.add(new ArrayList<>(M));
+            grid.add(new ArrayList<>(My));
             // genero M HashSets
-            for(int j = 0; j < M; j++) {
+            for(int j = 0; j < My; j++) {
                 grid.get(i).add(new HashSet<>());
             }
         }
         // copio la primer fila en la ultima
-        grid.set(M+1, grid.get(0));
+        grid.set(Mx, grid.get(0));
 
         // agrego cada particula a su celda
         for(Particle p : particles) {
             // las que tienen pos negativa las pongo en la primera columna
-            int x = (int) Math.max(0, ((p.getX() * M) / L));
-            int y = (int) Math.max(0, ((p.getY() * M) / L));
+            int x = (int) Math.max(0, ((p.getX() * Mx) / Lx));
+            int y = (int) Math.max(0, ((p.getY() * My) / Ly));
             grid.get(x).get(y).add(p);
         }
 
