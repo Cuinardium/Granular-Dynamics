@@ -2,6 +2,16 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 
+def plot_flow_rate_vs_acceleration(A_values, mean_flow_rates, std_flow_rates, file_path="flow_rate_vs_acceleration.png"):
+    plt.figure(figsize=(10, 6))
+    plt.errorbar(A_values, mean_flow_rates, yerr=std_flow_rates, fmt='-o', capsize=5)
+
+    plt.xlabel("Aceleración (m/s²)")
+    plt.ylabel("Caudal (partículas/s)")
+
+    plt.grid(True)
+    plt.savefig(file_path)
+    plt.close()
 
 def plot_cumulative_discharges(discharge_times_list, file_path="discharges.png"):
     plt.figure(figsize=(10, 6))
