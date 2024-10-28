@@ -1,5 +1,4 @@
 import numpy as np
-from numpy import dtype
 from scipy.stats import linregress
 import utils
 import plots
@@ -139,17 +138,6 @@ def flow_rate_and_resistence_vs_obstacles(start_M, stop_M, qty_steps):
 
 
 if __name__ == '__main__':
-    # discharge_times = utils.load_discharges(f'{output_directory}/discharges.txt')
-    # obstacles = utils.load_obstacles(f'{output_directory}/obstacles.txt')
-    # snapshots = utils.load_snapshots(f'{output_directory}/snapshots.txt')
-    # config = utils.load_config(f'{output_directory}/config.txt')
-    #
-    # # Get the first snapshot's particle positions
-    # first_snapshot = snapshots[next(iter(snapshots))]  # Get the first snapshot (the one with the smallest time)
-    #
-    # # Plot the initial state
-    # plots.plot_initial_state(config, obstacles, first_snapshot, f'{plot_directory}/initial_state.png')
-
-    # equivalent_simulations()
-    # flow_rate_and_resistence_vs_acceleration(0.5, 5, 4)
+    equivalent_simulations()
+    flow_rate_and_resistence_vs_acceleration(0.5, 5, 4)
     flow_rate_and_resistence_vs_obstacles(80, 120, 4)
