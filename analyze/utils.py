@@ -61,7 +61,7 @@ def execute_granular_dynamics_jar(
         width, length, obstacle_count, particle_count,
         obstacle_radius, particle_radius, particle_mass,
         acceleration, normal_k, tangential_k,
-        integration_step, snapshot_step, max_time,
+        integration_step, snapshot_step, max_time, g,
         output_directory, jar_path="../target/granullar-dynamics-1.0-jar-with-dependencies.jar"
 ):
     """
@@ -98,6 +98,7 @@ def execute_granular_dynamics_jar(
         "-dt", str(integration_step),
         "-dt2", str(snapshot_step),
         "-tf", str(max_time),
+        "-g", str(g),
         "-out", output_directory
     ]
 
