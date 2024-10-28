@@ -13,7 +13,7 @@ def plot_cumulative_discharges(discharge_times_list, file_path="discharges.png")
         cumulative_discharges = np.arange(1, len(discharge_times) + 1)
 
         # Plot cumulative discharges over time
-        plt.plot(discharge_times, cumulative_discharges, marker="o", linestyle="-")
+        plt.plot(discharge_times, cumulative_discharges, linestyle="-")
 
     plt.xlabel("Tiempo (s)")
     plt.ylabel("Descargas")
