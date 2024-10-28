@@ -2,7 +2,11 @@ package ar.edu.itba.ss.g2.simulation;
 
 import ar.edu.itba.ss.g2.model.Particle;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Simulation {
 
@@ -67,7 +71,7 @@ public class Simulation {
 
     takeSnapshot();
 
-    double currentTime = 0;
+    currentTime = 0;
 
     while (currentTime < maxTime) {
       integrate();
@@ -88,6 +92,155 @@ public class Simulation {
 
   public List<Double> getDischargeTimes() {
     return dischargeTimes;
+  }
+
+  // ========= Forces ==================
+
+  // First index x, second index y
+  @SuppressWarnings("unchecked")
+  private List<Double>[] calculateForces() {
+    List<Double>[] forces = (List<Double>[]) new List[2];
+    forces[X] = new ArrayList<>(particles.size());
+    forces[Y] = new ArrayList<>(particles.size());
+
+    // Constant acceleration
+    for (int i = 0; i < particles.size(); i++) {
+      Particle particle = particles.get(i);
+
+      Map<Particle, Set<Particle>> neighbours = getParticleNeighbours();
+      Map<Particle, Set<Particle>> obstacles = getObstacleNeighbours();
+
+      double[] force = {0, acceleration * particle.getMass()};
+
+      double[] particleForces = calculateParticleCollision(particle, neighbours.get(particle));
+      double[] obstacleForces = calculateObstacleCollision(particle, obstacles.get(particle));
+      double[] wallForces = calculateHorizontalWallCollision(particle);
+
+      force[X] += particleForces[X] + obstacleForces[X] + wallForces[X];
+      force[Y] += particleForces[Y] + obstacleForces[Y] + wallForces[Y];
+
+      forces[X].add(force[X]);
+      forces[Y].add(force[Y]);
+    }
+
+    return forces;
+  }
+
+  // - Particle
+
+  private double[] calculateParticleCollision(Particle particle, Set<Particle> neighbours) {
+    double radius = particle.getRadius();
+
+    double x = particle.getX();
+    double y = particle.getY();
+
+    double[] forces = new double[2];
+
+    for (Particle neighbour : neighbours) {
+      if (neighbour == particle) {
+        continue;
+      }
+
+      double dx = x - neighbour.getX();
+      double dy = y - neighbour.getY();
+
+      double distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+      double overlap = radius + neighbour.getRadius() - distance;
+
+      if (overlap <= 0) {
+        continue;
+      }
+
+      double[] normal = {dx / distance, dy / distance};
+      double[] tangential = {-normal[Y], normal[X]};
+
+      // Relative velocities
+
+      double relativeVx = particle.getVx() - neighbour.getVx();
+      double relativeVy = particle.getVy() - neighbour.getVy();
+
+      double relativeVNormal = relativeVx * normal[X] + relativeVy * normal[Y];
+      double relativeVTangential = relativeVx * tangential[X] + relativeVy * tangential[Y];
+
+      // Forces
+
+      // TODO: Dampening
+      double normalForce = -normalK * overlap;
+      double tangentialForce = -tangentialK * overlap * relativeVTangential;
+
+      forces[X] += normalForce * normal[X] + tangentialForce * tangential[X];
+      forces[Y] += normalForce * normal[Y] + tangentialForce * tangential[Y];
+    }
+
+    return forces;
+  }
+
+  // - Obstacle
+
+  private double[] calculateObstacleCollision(Particle particle, Set<Particle> neighbours) {
+    // TODO: Creo que es lo mismo porque el obstaculo tiene velocidad 0
+    return calculateParticleCollision(particle, neighbours);
+  }
+
+  // - Horizontal Wall
+
+  private double[] calculateHorizontalWallCollision(Particle particle) {
+    double[] forces = new double[2];
+
+    double y = particle.getY();
+    double radius = particle.getRadius();
+
+    double overlap = radius - y;
+
+    if (overlap <= 0) {
+      return forces;
+    }
+
+    double relativeVNormal = particle.getVy();
+
+    // TODO: Dampening
+    forces[Y] = -normalK * overlap;
+
+    return forces;
+  }
+
+  // ======= Neighbours ================
+
+  private Map<Particle, Set<Particle>> getParticleNeighbours() {
+    // TODO: Cell index method
+    Set<Particle> particleSet = new HashSet<>(particles);
+    return particleSet.stream()
+        .collect(Collectors.toMap(particle -> particle, particle -> particleSet));
+  }
+
+  private Map<Particle, Set<Particle>> getObstacleNeighbours() {
+
+    // TODO: Cell index method
+    Set<Particle> obstacleSet = new HashSet<>(obstacles);
+    return obstacleSet.stream()
+        .collect(Collectors.toMap(obstacle -> obstacle, obstacle -> obstacleSet));
+  }
+
+  // ======= Discharges ================
+
+  private void checkDischarges() {
+    for (int i = 0; i < particles.size(); i++) {
+      Particle particle = particles.get(i);
+
+      // Only in x, if discharged, periodic boundary conditions
+      if (particle.getX() < 0) {
+        particle.setX(width + particle.getX());
+      } else if (particle.getX() > length) {
+        particle.setX(particle.getX() - width);
+        dischargeTimes.add(currentTime);
+      }
+    }
+  }
+
+  // ======= Snapshots ================
+
+  private void takeSnapshot() {
+    snapshots.add(particles.stream().map(Particle::new).toList());
   }
 
   // ========== Integration =============
@@ -148,6 +301,10 @@ public class Simulation {
 
       particle.setX(nextX);
       particle.setY(nextY);
+
+      previousVelocities[X].add(currentVx);
+      previousVelocities[Y].add(currentVy);
+
       particle.setVx(predictedVx);
       particle.setVy(predictedVy);
     }
@@ -195,41 +352,5 @@ public class Simulation {
 
     // Recalculate forces as velocities have changed
     currentForces = calculateForces();
-  }
-  @SuppressWarnings("unchecked")
-  private List<Double>[] calculateForces() {
-    List<Double>[] forces = (List<Double>[]) new List[2];
-    forces[X] = new ArrayList<>(particles.size());
-    forces[Y] = new ArrayList<>(particles.size());
-
-    // Constant acceleration
-    for (int i = 0; i < particles.size(); i++) {
-      forces[X].add(acceleration);
-      forces[Y].add(0.0);
-    }
-
-    return forces;
-  }
-
-  // ======= Discharges ================
-
-  private void checkDischarges() {
-    for (int i = 0; i < particles.size(); i++) {
-      Particle particle = particles.get(i);
-
-      // Only in x, if discharged, periodic boundary conditions
-      if (particle.getX() < 0) {
-        particle.setX(width + particle.getX());
-      } else if (particle.getX() > length) {
-        particle.setX(particle.getX() - width);
-        dischargeTimes.add(currentTime);
-      }
-    }
-  }
-
-  // ======= Snapshots ================
-
-  private void takeSnapshot() {
-    snapshots.add(particles.stream().map(Particle::new).toList());
   }
 }
