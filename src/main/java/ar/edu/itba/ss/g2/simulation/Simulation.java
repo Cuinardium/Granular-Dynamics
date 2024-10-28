@@ -247,14 +247,62 @@ public class Simulation {
         for (int i = 0; i < particles.size(); i++) {
             Particle particle = particles.get(i);
 
-            // Only in x, if discharged, periodic boundary conditions
-            if (particle.getX() < 0) {
-                particle.setX(length + particle.getX());
-            } else if (particle.getX() > length) {
-                particle.setX(particle.getX() - length);
+            if (particle.getX() > length) {
+                moveToBeginning(particle);
                 dischargeTimes.add(currentTime);
             }
         }
+    }
+
+    // Function that returns the particle to
+    // the start (x=0) but avoids the particle
+    // overlapping with others and obstacles
+    private void moveToBeginning(Particle particle) {
+        double radius = particle.getRadius();
+        boolean overlapping;
+        double x = -radius;
+        double y = particle.getY();
+
+        do {
+            overlapping = false;
+            particle.setX(x);
+
+            // Check overlap with other particles
+            for (Particle other : particles) {
+                if (other != particle) {
+                    double dx = particle.getX() - other.getX();
+                    double dy = y - other.getY();
+                    double distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < radius + other.getRadius()) {
+                        overlapping = true;
+                        y = radius + Math.random() * (width - 2 * radius); // Try new y position
+                        break;
+                    }
+                }
+            }
+
+            // Check overlap with obstacles
+            for (Particle obstacle : obstacles) {
+                double dx = particle.getX() - obstacle.getX();
+                double dy = y - obstacle.getY();
+                double distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < radius + obstacle.getRadius()) {
+                    overlapping = true;
+                    y = radius + Math.random() * (length - 2 * radius); // Try new y position
+                    break;
+                }
+            }
+
+            // If still overlapping, move slightly back in x-axis
+            if (overlapping) {
+                x -= radius;
+            } else {
+                particle.setY(y); // Finalize position if no overlap
+            }
+
+        } while (overlapping);
     }
 
     // ======= Snapshots ================
