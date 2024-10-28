@@ -18,7 +18,7 @@ public class App {
     Config config = parser.parse();
 
     if (config == null) {
-      System.err.println("Error while parsing arguments");
+      parser.printHelp();
       System.exit(1);
     }
 
