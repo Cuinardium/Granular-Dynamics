@@ -25,6 +25,8 @@ public class App {
         // TODO: seed
         Random random = new Random();
 
+        System.out.println("Generating obstacles...");
+
         ObstacleGenerator obstacleGenerator =
                 new ObstacleGenerator(
                         config.getWidth(),
@@ -34,6 +36,8 @@ public class App {
                         random);
 
         List<Particle> obstacles = obstacleGenerator.generate();
+
+        System.out.println("Generating particles...");
 
         ParticleGenerator particleGenerator =
                 new ParticleGenerator(
@@ -56,10 +60,13 @@ public class App {
                         config.getLength(),
                         config.getAcceleration(),
                         config.getNormalK(),
+                        config.getGamma(),
                         config.getTangentialK(),
                         config.getIntegrationStep(),
                         config.getSnapshotStep(),
                         config.getMaxTime());
+
+        System.out.println("Running simulation...");
 
         simulation.run();
 

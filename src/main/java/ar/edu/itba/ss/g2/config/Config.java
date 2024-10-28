@@ -18,6 +18,7 @@ public class Config {
     // Fuerzas
     private final double acceleration; // A0
     private final double normalK; // k_n
+    private final double gamma; // g
     private final double tangentialK; // k_t
 
     // Tiempos
@@ -64,6 +65,10 @@ public class Config {
         return normalK;
     }
 
+    public double getGamma() {
+        return gamma;
+    }
+
     public double getTangentialK() {
         return tangentialK;
     }
@@ -94,6 +99,7 @@ public class Config {
         this.particleMass = builder.particleMass;
         this.acceleration = builder.acceleration;
         this.normalK = builder.normalK;
+        this.gamma = builder.gamma;
         this.tangentialK = builder.tangentialK;
         this.integrationStep = builder.integrationStep;
         this.snapshotStep = builder.snapshotStep;
@@ -111,6 +117,7 @@ public class Config {
         private double particleMass;
         private double acceleration;
         private double normalK;
+        private double gamma;
         private double tangentialK;
         private double integrationStep;
         private double snapshotStep;
@@ -159,6 +166,11 @@ public class Config {
 
         public Builder normalK(double normalK) {
             this.normalK = normalK;
+            return this;
+        }
+
+        public Builder gamma(double gamma) {
+            this.gamma = gamma;
             return this;
         }
 

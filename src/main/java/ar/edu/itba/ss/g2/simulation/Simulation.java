@@ -24,6 +24,7 @@ public class Simulation {
     private final double length;
     private final double acceleration;
     private final double normalK;
+    private final double gamma;
     private final double tangentialK;
     private final double integrationStep;
     private final double snapshotStep;
@@ -42,6 +43,7 @@ public class Simulation {
             double length,
             double acceleration,
             double normalK,
+            double gamma,
             double tangentialK,
             double integrationStep,
             double snapshotStep,
@@ -58,6 +60,7 @@ public class Simulation {
         this.length = length;
         this.acceleration = acceleration;
         this.normalK = normalK;
+        this.gamma = gamma;
         this.tangentialK = tangentialK;
         this.integrationStep = integrationStep;
         this.snapshotStep = snapshotStep;
@@ -84,6 +87,7 @@ public class Simulation {
             elapsed += integrationStep;
 
             if (elapsed >= snapshotStep) {
+                System.out.println("Time: " + currentTime);
                 takeSnapshot();
                 elapsed = 0;
             }
@@ -139,6 +143,9 @@ public class Simulation {
         double x = particle.getX();
         double y = particle.getY();
 
+        double vx = particle.getVx();
+        double vy = particle.getVy();
+
         double[] forces = new double[2];
 
         for (Particle neighbour : neighbours) {
@@ -161,16 +168,16 @@ public class Simulation {
 
             // Relative velocities
 
-            double relativeVx = particle.getVx() - neighbour.getVx();
-            double relativeVy = particle.getVy() - neighbour.getVy();
+            double relativeVx = vx - neighbour.getVx();
+            double relativeVy = vy - neighbour.getVy();
 
+            // overlap rate change
             double relativeVNormal = relativeVx * normal[X] + relativeVy * normal[Y];
             double relativeVTangential = relativeVx * tangential[X] + relativeVy * tangential[Y];
 
             // Forces
 
-            // TODO: Dampening
-            double normalForce = -normalK * overlap;
+            double normalForce = -normalK * overlap + gamma * relativeVNormal;
             double tangentialForce = -tangentialK * overlap * relativeVTangential;
 
             forces[X] += normalForce * -normal[X] + tangentialForce * tangential[X];
@@ -196,17 +203,20 @@ public class Simulation {
         double y = particle.getY();
         double radius = particle.getRadius();
 
+        // Rate of overlap change
+        double vy = particle.getVy();
+
         // Bottom wall at width=0
         double overlap = radius - y;
         if (overlap > 0) {
-            forces[Y] = normalK * overlap;
+            forces[Y] = normalK * overlap - gamma * vy;
             return forces;
         }
 
         // Top wall at width=width
         overlap = radius - (width - y);
         if (overlap > 0) {
-            forces[Y] = -normalK * overlap;
+            forces[Y] = -normalK * overlap - gamma * vy;
             return forces;
         }
 

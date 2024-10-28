@@ -24,6 +24,7 @@ public class ArgParser {
                     new Option("m", "particle-mass", true, "Mass of the particles"),
                     new Option("A", "acceleration", true, "Acceleration of the particles"),
                     new Option("k_n", "normal-k", true, "Normal force constant"),
+                    new Option("g", "gamma", true, "The amortiguator constant for the normal force"),
                     new Option("k_t", "tangential-k", true, "Tangential force constant"),
                     new Option("dt", "integration-step", true, "Integration step"),
                     new Option("dt2", "snapshot-step", true, "Snapshot step"),
@@ -235,6 +236,23 @@ public class ArgParser {
             builder.normalK(normalK);
         } else {
             System.err.println("Normal K (k_n) is required");
+            return null;
+        }
+
+        // gamma
+        if (cmd.hasOption("g")) {
+            double gamma;
+
+            try {
+                gamma = Double.parseDouble(cmd.getOptionValue("g"));
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid Gamma: " + cmd.getOptionValue("g"));
+                return null;
+            }
+
+            builder.gamma(gamma);
+        } else {
+            System.err.println("Gamma (g) is required");
             return null;
         }
 
