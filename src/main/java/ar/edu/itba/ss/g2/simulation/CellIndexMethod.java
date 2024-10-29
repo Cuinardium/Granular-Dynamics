@@ -63,36 +63,31 @@ public class CellIndexMethod {
                 // estoy parado en E.
                 Set<Particle> currentCellParticles = grid.get(x).get(y);
                 for (Particle p1 : currentCellParticles) {
-                    // reviso E
                     checkAdjacent(x, y, p1, neighbours);
                     // me saco a mi mismo
                     neighbours.get(p1).remove(p1);
-
-                    // reviso B
-                    checkAdjacent(x - 1, y, p1, neighbours);
-                    // reviso C
-                    checkAdjacent(x - 1, y+1, p1, neighbours);
-                    // reviso F
-                    checkAdjacent(x, y+1, p1, neighbours);
-                    // reviso I
-                    checkAdjacent(x+1 , y+1, p1, neighbours);
                 }
             }
         }
         return neighbours;
     }
 
+    private static final int[][] NEIGHBOR_OFFSETS = {
+        {0, 0}, {-1, 0}, {-1, 1}, {0, 1}, {1, 1}
+    };
+    
     private void checkAdjacent(int x, int y, Particle p1, Map<Particle, Set<Particle>> neighbours) {
-        if(x < 0 || y < 0 || x >= grid.size() || y >= grid.get(0).size()) {
-            return;
-        }
-
-        for(Particle p2: grid.get(x).get(y)) {
-            neighbours.get(p1).add(p2);
-            neighbours.get(p2).add(p1);
+        for (int[] offset : NEIGHBOR_OFFSETS) {
+            int nx = x + offset[0];
+            int ny = y + offset[1];
+            if (nx >= 0 && ny >= 0 && nx < grid.size() && ny < grid.get(0).size()) {
+                for (Particle p2 : grid.get(nx).get(ny)) {
+                    neighbours.get(p1).add(p2);
+                    neighbours.get(p2).add(p1);
+                }
+            }
         }
     }
-
     private void clearGrid() {
         for(List<Set<Particle>> row: grid) {
             for(Set<Particle> cell: row) {
