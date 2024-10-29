@@ -16,6 +16,7 @@ public class Simulation {
 
     private final List<Particle> particles;
     private final List<Particle> obstacles;
+    private final List<Particle> obstaclesAndParticles;
 
     private List<Double>[] previousForces;
     private List<Double>[] currentForces;
@@ -52,6 +53,9 @@ public class Simulation {
 
         this.particles = particles;
         this.obstacles = obstacles;
+        this.obstaclesAndParticles = new ArrayList<>(particles.size() + obstacles.size());
+        this.obstaclesAndParticles.addAll(obstacles);
+        this.obstaclesAndParticles.addAll(particles);
 
         int snapshotCount = (int) Math.ceil(maxTime / snapshotStep);
         this.snapshots = new ArrayList<>(snapshotCount);
@@ -113,8 +117,8 @@ public class Simulation {
         forces[X] = new ArrayList<>(particles.size());
         forces[Y] = new ArrayList<>(particles.size());
 
-        Map<Particle, Set<Particle>> neighbours = cellIndexMethod.getNeighbours(particles);
-        Map<Particle, Set<Particle>> obstacles = cellIndexMethod.getNeighbours(this.obstacles);
+
+        Map<Particle, Set<Particle>> neighbours = cellIndexMethod.getNeighbours(obstaclesAndParticles);
 
         // Constant acceleration
         for (int i = 0; i < particles.size(); i++) {
@@ -125,11 +129,10 @@ public class Simulation {
 
             double[] particleForces =
                     calculateParticleCollision(particle, neighbours.get(particle));
-            double[] obstacleForces = calculateObstacleCollision(particle, obstacles.get(particle));
             double[] wallForces = calculateHorizontalWallCollision(particle);
 
-            force[X] += particleForces[X] + obstacleForces[X] + wallForces[X];
-            force[Y] += particleForces[Y] + obstacleForces[Y] + wallForces[Y];
+            force[X] += particleForces[X]  + wallForces[X];
+            force[Y] += particleForces[Y]  + wallForces[Y];
 
             forces[X].add(force[X]);
             forces[Y].add(force[Y]);

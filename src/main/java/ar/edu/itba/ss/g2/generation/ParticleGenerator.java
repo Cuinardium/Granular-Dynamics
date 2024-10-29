@@ -56,7 +56,7 @@ public class ParticleGenerator {
 
             Particle particle =
                     new Particle(
-                            i,
+                            i + obstacles.size(),
                             x,
                             0.0,
                             ax,
