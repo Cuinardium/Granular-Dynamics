@@ -66,7 +66,7 @@ public class Simulation {
         this.integrationStep = integrationStep;
         this.snapshotStep = snapshotStep;
         this.maxTime = maxTime;
-        this.cellIndexMethod = new CellIndexMethod((int) Math.ceil(length), (int) Math.ceil(width));
+        this.cellIndexMethod = new CellIndexMethod(length, width, 3 * particles.get(0).getRadius());
     }
 
     public void run() {
@@ -113,12 +113,13 @@ public class Simulation {
         forces[X] = new ArrayList<>(particles.size());
         forces[Y] = new ArrayList<>(particles.size());
 
+        Map<Particle, Set<Particle>> neighbours = cellIndexMethod.getNeighbours(particles);
+        Map<Particle, Set<Particle>> obstacles = cellIndexMethod.getNeighbours(this.obstacles);
+
         // Constant acceleration
         for (int i = 0; i < particles.size(); i++) {
             Particle particle = particles.get(i);
 
-            Map<Particle, Set<Particle>> neighbours = getParticleNeighbours();
-            Map<Particle, Set<Particle>> obstacles = getObstacleNeighbours();
 
             double[] force = {acceleration * particle.getMass(), 0};
 
