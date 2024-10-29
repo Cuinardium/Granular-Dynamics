@@ -30,6 +30,21 @@ public class CellIndexMethod {
         this.My = My;
         this.Lx = length;
         this.Ly = width;
+
+        List<List<Set<Particle>>> grid;
+
+        // M + 1 filas ( crece en x, es donde se presentan las condiciones periodicas de contorno)
+        grid = new ArrayList<>(Mx+1);
+        for(int i = 0; i < Mx; i++) {
+            // M columnas
+            grid.add(new ArrayList<>(My));
+            // genero M HashSets
+            for(int j = 0; j < My; j++) {
+                grid.get(i).add (new HashSet<>());
+            }
+        }
+        // copio la primer fila en la ultima
+        grid.add(grid.get(0));
     }
 
     public Map<Particle, Set<Particle>> getNeighbours(List<Particle> particles) {
@@ -79,21 +94,6 @@ public class CellIndexMethod {
     }
 
     private List<List<Set<Particle>>> generateGrid(List<Particle> particles) {
-        List<List<Set<Particle>>> grid;
-
-        // M + 1 filas ( crece en x, es donde se presentan las condiciones periodicas de contorno)
-        grid = new ArrayList<>(Mx+1);
-        for(int i = 0; i < Mx; i++) {
-            // M columnas
-            grid.add(new ArrayList<>(My));
-            // genero M HashSets
-            for(int j = 0; j < My; j++) {
-                grid.get(i).add (new HashSet<>());
-            }
-        }
-        // copio la primer fila en la ultima
-        grid.add(grid.get(0));
-
         // agrego cada particula a su celda
         for(Particle p : particles) {
             // las que tienen pos negativa las pongo en la primera columna
