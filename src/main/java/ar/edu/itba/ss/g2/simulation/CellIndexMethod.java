@@ -31,8 +31,6 @@ public class CellIndexMethod {
         this.Lx = length;
         this.Ly = width;
 
-        List<List<Set<Particle>>> grid;
-
         // M + 1 filas ( crece en x, es donde se presentan las condiciones periodicas de contorno)
         grid = new ArrayList<>(Mx+1);
         for(int i = 0; i < Mx; i++) {
