@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 public class Simulation {
@@ -31,6 +32,9 @@ public class Simulation {
     private final double snapshotStep;
     private final double maxTime;
     private final CellIndexMethod cellIndexMethod;
+
+    // TODO: seed
+    private final Random random = new Random();
 
     private double currentTime;
 
@@ -282,7 +286,7 @@ public class Simulation {
 
                     if (distance < radius + other.getRadius()) {
                         overlapping = true;
-                        y = radius + Math.random() * (width - 2 * radius); // Try new y position
+                        y = radius + random.nextDouble() * (width - 2 * radius); // Try new y position
                         break;
                     }
                 }
@@ -296,7 +300,7 @@ public class Simulation {
 
                 if (distance < radius + obstacle.getRadius()) {
                     overlapping = true;
-                    y = radius + Math.random() * (length - 2 * radius); // Try new y position
+                    y = radius + random.nextDouble() * (length - 2 * radius); // Try new y position
                     break;
                 }
             }
