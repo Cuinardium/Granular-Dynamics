@@ -11,39 +11,25 @@ public class CellIndexMethod {
     private final double Lx;
     private final double Ly;
 
-    private List<List<Set<Particle>>> grid;
+    private final Set<Particle>[][] grid;
+
 
     public CellIndexMethod(double length, double width, double  rc) {
         this.Lx = length;
         this.Ly = width;
+        this.Mx = (int) Math.max(1, Math.floor(Lx/rc));
+        this.My = (int) Math.max(1, Math.floor(Ly/rc));
 
-        int Mx = (int) Math.floor(Lx/rc);
+        this.grid = new HashSet[Mx+1][My];
 
-        if(Mx <= 0) {
-            Mx = 1;
-        }
-
-        int My = (int) Math.floor(Ly/rc);
-
-        if(My <= 0) {
-            My = 1;
-        }
-
-        this.Mx = Mx;
-        this.My = My;
-
-        // M + 1 filas ( crece en x, es donde se presentan las condiciones periodicas de contorno)
-        this.grid = new ArrayList<>(Mx+1);
-        for(int i = 0; i < Mx; i++) {
-            // M columnas
-            this.grid.add(new ArrayList<>(My));
-            // genero M HashSets
-            for(int j = 0; j < My; j++) {
-                this.grid.get(i).add (new HashSet<>());
+        for (int i = 0; i < Mx; i++) {
+            for (int j = 0; j < My; j++) {
+                grid[i][j] = new HashSet<>();
             }
         }
+
         // copio la primer fila en la ultima
-        this.grid.add(this.grid.get(0));
+        this.grid[Mx] = this.grid[0];
     }
 
     public Map<Particle, Set<Particle>> getNeighbours(List<Particle> particles) {
@@ -54,14 +40,14 @@ public class CellIndexMethod {
         clearGrid();
         updateGrid(particles);
 
-        for (int x = 0; x < grid.size(); x++) {
-            for (int y = 0; y < grid.get(x).size(); y++) {
+        for (int x = 0; x < Mx + 1; x++) {
+            for (int y = 0; y < My; y++) {
                 // dada la siguiente submatriz
                 // A B C
                 // D E F
                 // G H I
                 // estoy parado en E.
-                Set<Particle> currentCellParticles = grid.get(x).get(y);
+                Set<Particle> currentCellParticles = grid[x][y];
                 for (Particle p1 : currentCellParticles) {
                     checkAdjacent(x, y, p1, neighbours);
                     // me saco a mi mismo
@@ -72,16 +58,16 @@ public class CellIndexMethod {
         return neighbours;
     }
 
-    private static final int[][] NEIGHBOR_OFFSETS = {
+    private static final int[][] NEIGHBOUR_OFFSETS = {
         {0, 0}, {-1, 0}, {-1, 1}, {0, 1}, {1, 1}
     };
     
     private void checkAdjacent(int x, int y, Particle p1, Map<Particle, Set<Particle>> neighbours) {
-        for (int[] offset : NEIGHBOR_OFFSETS) {
+        for (int[] offset : NEIGHBOUR_OFFSETS) {
             int nx = x + offset[0];
             int ny = y + offset[1];
-            if (nx >= 0 && ny >= 0 && nx < grid.size() && ny < grid.get(0).size()) {
-                for (Particle p2 : grid.get(nx).get(ny)) {
+            if (nx >= 0 && ny >= 0 && nx < Mx+1 && ny < My) {
+                for (Particle p2 : grid[nx][ny]) {
                     neighbours.get(p1).add(p2);
                     neighbours.get(p2).add(p1);
                 }
@@ -89,7 +75,8 @@ public class CellIndexMethod {
         }
     }
     private void clearGrid() {
-        for(List<Set<Particle>> row: grid) {
+        
+        for(Set<Particle>[] row: grid) {
             for(Set<Particle> cell: row) {
                 cell.clear();
             }
@@ -102,7 +89,7 @@ public class CellIndexMethod {
             // las que tienen pos negativa las pongo en la primera columna
             int x = (int) Math.max(0, ((p.getX() * Mx) / Lx));
             int y = (int) Math.max(0, ((p.getY() * My) / Ly));
-            grid.get(x).get(y).add(p);
+            grid[x][y].add(p);
         }
     }
 }
