@@ -43,7 +43,7 @@ public class ParticleGenerator {
     public List<Particle> generate() {
         List<Particle> particles = new ArrayList<>(particleCount);
 
-        for (int i = 0, tries = 0; i < particleCount; i++, tries++) {
+        for (int i = obstacles.size() - 1, tries = 0; i < particleCount; i++, tries++) {
 
             if (tries > MAX_TRIES) {
                 throw new IllegalStateException("Could not generate particles without overlaps");
