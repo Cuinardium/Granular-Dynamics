@@ -20,7 +20,7 @@ public class CellIndexMethod {
         this.Mx = (int) Math.max(1, Math.floor(Lx/rc));
         this.My = (int) Math.max(1, Math.floor(Ly/rc));
 
-        this.grid = new HashSet[Mx+1][My];
+        this.grid = new HashSet[Mx][My];
 
         for (int i = 0; i < Mx; i++) {
             for (int j = 0; j < My; j++) {
@@ -28,8 +28,6 @@ public class CellIndexMethod {
             }
         }
 
-        // copio la primer fila en la ultima
-        this.grid[Mx] = this.grid[0];
     }
 
     public Map<Particle, Set<Particle>> getNeighbours(List<Particle> particles) {
@@ -40,7 +38,7 @@ public class CellIndexMethod {
         clearGrid();
         updateGrid(particles);
 
-        for (int x = 0; x < Mx + 1; x++) {
+        for (int x = 0; x < Mx; x++) {
             for (int y = 0; y < My; y++) {
                 // dada la siguiente submatriz
                 // A B C
@@ -66,7 +64,7 @@ public class CellIndexMethod {
         for (int[] offset : NEIGHBOUR_OFFSETS) {
             int nx = x + offset[0];
             int ny = y + offset[1];
-            if (nx >= 0 && ny >= 0 && nx < Mx+1 && ny < My) {
+            if (nx >= 0 && ny >= 0 && nx < Mx && ny < My) {
                 for (Particle p2 : grid[nx][ny]) {
                     neighbours.get(p1).add(p2);
                     neighbours.get(p2).add(p1);
@@ -88,7 +86,9 @@ public class CellIndexMethod {
         for(Particle p : particles) {
             // las que tienen pos negativa las pongo en la primera columna
             int x = (int) Math.max(0, ((p.getX() * Mx) / Lx));
+            x = Math.min(x, Mx - 1);
             int y = (int) Math.max(0, ((p.getY() * My) / Ly));
+            y = Math.min(y, My - 1);
             grid[x][y].add(p);
         }
     }
