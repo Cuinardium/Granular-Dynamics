@@ -2,12 +2,7 @@ package ar.edu.itba.ss.g2.simulation;
 
 import ar.edu.itba.ss.g2.model.Particle;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Simulation {
@@ -33,8 +28,7 @@ public class Simulation {
     private final double maxTime;
     private final CellIndexMethod cellIndexMethod;
 
-    // TODO: seed
-    private final Random random = new Random();
+    private final Random random;
 
     private double currentTime;
 
@@ -53,7 +47,8 @@ public class Simulation {
             double tangentialK,
             double integrationStep,
             double snapshotStep,
-            double maxTime) {
+            double maxTime,
+            Random random) {
 
         this.particles = particles;
         this.obstacles = obstacles;
@@ -75,6 +70,7 @@ public class Simulation {
         this.snapshotStep = snapshotStep;
         this.maxTime = maxTime;
         this.cellIndexMethod = new CellIndexMethod(length, width, 3 * particles.get(0).getRadius());
+        this.random = random;
     }
 
     public void run() {
@@ -121,22 +117,22 @@ public class Simulation {
         forces[X] = new ArrayList<>(particles.size());
         forces[Y] = new ArrayList<>(particles.size());
 
-
-        Map<Particle, Set<Particle>> neighbours = cellIndexMethod.getNeighbours(obstaclesAndParticles);
+        Map<Particle, Set<Particle>> neighbours =
+                cellIndexMethod.getNeighbours(obstaclesAndParticles);
 
         // Constant acceleration
         for (int i = 0; i < particles.size(); i++) {
             Particle particle = particles.get(i);
 
-
             double[] force = {acceleration * particle.getMass(), 0};
+
 
             double[] particleForces =
                     calculateParticleCollision(particle, neighbours.get(particle));
             double[] wallForces = calculateHorizontalWallCollision(particle);
 
-            force[X] += particleForces[X]  + wallForces[X];
-            force[Y] += particleForces[Y]  + wallForces[Y];
+            force[X] += particleForces[X] + wallForces[X];
+            force[Y] += particleForces[Y] + wallForces[Y];
 
             forces[X].add(force[X]);
             forces[Y].add(force[Y]);
@@ -159,7 +155,7 @@ public class Simulation {
         double[] forces = new double[2];
 
         for (Particle neighbour : neighbours) {
-            if (neighbour == particle) {
+            if (neighbour.equals(particle)) {
                 continue;
             }
 
@@ -278,7 +274,7 @@ public class Simulation {
             particle.setX(x);
 
             // Check overlap with other particles
-            for (Particle other : particles) {
+            for (Particle other : obstaclesAndParticles) {
                 if (other != particle) {
                     double dx = particle.getX() - other.getX();
                     double dy = y - other.getY();
@@ -286,22 +282,12 @@ public class Simulation {
 
                     if (distance < radius + other.getRadius()) {
                         overlapping = true;
-                        y = radius + random.nextDouble() * (width - 2 * radius); // Try new y position
+                        y =
+                                radius
+                                        + random.nextDouble()
+                                                * (width - 2 * radius); // Try new y position
                         break;
                     }
-                }
-            }
-
-            // Check overlap with obstacles
-            for (Particle obstacle : obstacles) {
-                double dx = particle.getX() - obstacle.getX();
-                double dy = y - obstacle.getY();
-                double distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance < radius + obstacle.getRadius()) {
-                    overlapping = true;
-                    y = radius + random.nextDouble() * (length - 2 * radius); // Try new y position
-                    break;
                 }
             }
 

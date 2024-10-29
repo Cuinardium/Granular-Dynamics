@@ -23,7 +23,7 @@ public class App {
         }
 
         // TODO: seed
-        Random random = new Random();
+        Random random = new Random(1);
 
         System.out.println("Generating obstacles...");
 
@@ -64,7 +64,8 @@ public class App {
                         config.getTangentialK(),
                         config.getIntegrationStep(),
                         config.getSnapshotStep(),
-                        config.getMaxTime());
+                        config.getMaxTime(),
+                        random);
 
         System.out.println("Running simulation...");
 
