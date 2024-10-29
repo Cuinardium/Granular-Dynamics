@@ -87,11 +87,11 @@ public class CellIndexMethod {
         Set<Particle> adjacentCellParticles = grid.get(x).get(y);
         for(Particle p2: adjacentCellParticles) {
             neighbours.get(p1).add(p2);
-             neighbours.get(p2).add(p1);
+            neighbours.get(p2).add(p1);
         }
     }
 
-    private List<List<Set<Particle>>> generateGrid(List<Particle> particles) {
+    private List<List<Set<Particle>>> generateGrid(List<Particle> particles) { 
         // agrego cada particula a su celda
         for(Particle p : particles) {
             // las que tienen pos negativa las pongo en la primera columna
