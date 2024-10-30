@@ -5,8 +5,8 @@ import concurrent.futures
 import utils
 import plots
 
-output_directory = "dataa/analysis"
-plot_directory = "dataa/plots"
+output_directory = "data/analysis"
+plot_directory = "data/plots"
 
 A = 1
 W = 40
