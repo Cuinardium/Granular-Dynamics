@@ -11,7 +11,7 @@ plot_directory = "data/plots"
 A = 1
 W = 40
 L = 140
-M = 80
+M = 60
 N = 100
 R = 1
 r = 1
@@ -22,7 +22,7 @@ k_t = 500
 dt = 0.001
 dt2 = 10
 tf = 1000
-workers = 10
+workers = 16
 
 
 def equivalent_simulations():
@@ -124,16 +124,18 @@ def flow_rate_and_resistence_vs_acceleration(start_A, stop_A, qty_steps):
                 exit_times = utils.load_discharges(f"{dir}/discharges.txt")
 
                 config = utils.load_config(f"{dir}/config.txt")
-                a = config["acceleration"]
+                acceleration = config["acceleration"]
+                particle_mass = config["particle_mass"]
+                max_time = config["max_time"]
 
-                flow_rate = calculate_flow_rate(exit_times, tf / 2)
+                flow_rate = calculate_flow_rate(exit_times, max_time / 2)
 
-                resistence = (mass * a) / flow_rate
+                resistence = (particle_mass * acceleration) / flow_rate
 
-                if a not in results:
-                    results[a] = [(flow_rate, resistence)]
+                if acceleration not in results:
+                    results[acceleration] = [(flow_rate, resistence)]
                 else:
-                    results[a].append((flow_rate, resistence))
+                    results[acceleration].append((flow_rate, resistence))
 
             except Exception as e:
                 print(f"Error: {e}")
@@ -222,16 +224,19 @@ def flow_rate_and_resistence_vs_obstacles(start_M, stop_M, qty_steps):
                 exit_times = utils.load_discharges(f"{dir}/discharges.txt")
 
                 config = utils.load_config(f"{dir}/config.txt")
-                m = config["obstacle_count"]
+                obstacle_count = config["obstacle_count"]
+                particle_mass = config["particle_mass"]
+                acceleration = config["acceleration"]
+                max_time = config["max_time"]
 
-                flow_rate = calculate_flow_rate(exit_times, tf / 2)
+                flow_rate = calculate_flow_rate(exit_times, max_time / 2)
 
-                resistence = (m * A) / flow_rate
+                resistence = (particle_mass * acceleration) / flow_rate
 
-                if m not in results:
-                    results[m] = [(flow_rate, resistence)]
+                if obstacle_count not in results:
+                    results[obstacle_count] = [(flow_rate, resistence)]
                 else:
-                    results[m].append((flow_rate, resistence))
+                    results[obstacle_count].append((flow_rate, resistence))
 
             except Exception as e:
                 print(f"Error: {e}")
