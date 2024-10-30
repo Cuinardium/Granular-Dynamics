@@ -2,17 +2,21 @@ package ar.edu.itba.ss.g2.simulation;
 
 import ar.edu.itba.ss.g2.model.Particle;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Random;
 import java.util.stream.Collectors;
 
-public class Simulation {
+public class SimulationOld {
 
     private static final int X = 0;
     private static final int Y = 1;
 
     private final List<Particle> particles;
     private final List<Particle> obstacles;
-    private final List<Particle> obstaclesAndParticles;
 
     private List<Double>[] previousForces;
     private List<Double>[] currentForces;
@@ -36,7 +40,7 @@ public class Simulation {
     private final List<List<Particle>> snapshots;
     private final List<Double> dischargeTimes;
 
-    public Simulation(
+    public SimulationOld(
             List<Particle> particles,
             List<Particle> obstacles,
             double width,
@@ -52,9 +56,6 @@ public class Simulation {
 
         this.particles = particles;
         this.obstacles = obstacles;
-        this.obstaclesAndParticles = new ArrayList<>(particles.size() + obstacles.size());
-        this.obstaclesAndParticles.addAll(obstacles);
-        this.obstaclesAndParticles.addAll(particles);
 
         int snapshotCount = (int) Math.ceil(maxTime / snapshotStep);
         this.snapshots = new ArrayList<>(snapshotCount);
@@ -117,21 +118,18 @@ public class Simulation {
         forces[X] = new ArrayList<>(particles.size());
         forces[Y] = new ArrayList<>(particles.size());
 
-        Map<Particle, Set<Particle>> neighbours =
-                cellIndexMethod.getNeighbours(obstaclesAndParticles);
-
         // Constant acceleration
         for (int i = 0; i < particles.size(); i++) {
             Particle particle = particles.get(i);
 
+            Map<Particle, Set<Particle>> neighbours = getParticleNeighbours();
+            Map<Particle, Set<Particle>> obstacles = getObstacleNeighbours();
+
             double[] force = {acceleration * particle.getMass(), 0};
 
-
-            
             double[] particleForces =
-                    calculateParticleCollision(particle, neighbours.get(particle).stream().filter(k -> particles.contains(k)).sorted().collect(Collectors.toSet()));
-            double[] obstacleForces =
-                    calculateParticleCollision(particle, neighbours.get(particle).stream().filter(k -> obstacles.contains(k)).sorted().collect(Collectors.toSet()));
+                    calculateParticleCollision(particle, neighbours.get(particle).stream().sorted().collect(Collectors.toSet()));
+            double[] obstacleForces = calculateObstacleCollision(particle, obstacles.get(particle).stream().sorted().collect(Collectors.toSet()));
             double[] wallForces = calculateHorizontalWallCollision(particle);
 
             force[X] += particleForces[X] + obstacleForces[X] + wallForces[X];
@@ -158,7 +156,7 @@ public class Simulation {
         double[] forces = new double[2];
 
         for (Particle neighbour : neighbours) {
-            if (neighbour.equals(particle)) {
+            if (neighbour == particle) {
                 continue;
             }
 
@@ -277,7 +275,7 @@ public class Simulation {
             particle.setX(x);
 
             // Check overlap with other particles
-            for (Particle other : obstaclesAndParticles) {
+            for (Particle other : particles) {
                 if (other != particle) {
                     double dx = particle.getX() - other.getX();
                     double dy = y - other.getY();
@@ -285,12 +283,22 @@ public class Simulation {
 
                     if (distance < radius + other.getRadius()) {
                         overlapping = true;
-                        y =
-                                radius
-                                        + random.nextDouble()
-                                                * (width - 2 * radius); // Try new y position
+                        y = radius + Math.random() * (width - 2 * radius); // Try new y position
                         break;
                     }
+                }
+            }
+
+            // Check overlap with obstacles
+            for (Particle obstacle : obstacles) {
+                double dx = particle.getX() - obstacle.getX();
+                double dy = y - obstacle.getY();
+                double distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < radius + obstacle.getRadius()) {
+                    overlapping = true;
+                    y = radius + Math.random() * (length - 2 * radius); // Try new y position
+                    break;
                 }
             }
 

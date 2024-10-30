@@ -6,6 +6,7 @@ import ar.edu.itba.ss.g2.generation.ObstacleGenerator;
 import ar.edu.itba.ss.g2.generation.ParticleGenerator;
 import ar.edu.itba.ss.g2.model.Particle;
 import ar.edu.itba.ss.g2.simulation.Simulation;
+import ar.edu.itba.ss.g2.simulation.SimulationOld;
 import ar.edu.itba.ss.g2.util.FileUtil;
 
 import java.util.List;

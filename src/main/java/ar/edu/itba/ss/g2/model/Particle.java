@@ -1,6 +1,6 @@
 package ar.edu.itba.ss.g2.model;
 
-public class Particle {
+public class Particle implements Comparable<Particle> {
     private int id;
 
     private Double x;
@@ -152,5 +152,10 @@ public class Particle {
     @Override
     public int hashCode() {
         return Integer.hashCode(id);
+    }
+
+    @Override
+    public int compareTo(Particle other) {
+        return Integer.compare(id, other.id);
     }
 }
