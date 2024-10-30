@@ -1,10 +1,12 @@
 import numpy as np
+import shutil
 from scipy.stats import linregress
+import concurrent.futures
 import utils
 import plots
 
-output_directory = 'data/analysis'
-plot_directory = 'data/plots'
+output_directory = "dataa/analysis"
+plot_directory = "dataa/plots"
 
 A = 1
 W = 40
@@ -13,28 +15,63 @@ M = 80
 N = 100
 R = 1
 r = 1
-m = 1
+mass = 1
 k_n = 250
 g = k_n / 100
 k_t = 500
 dt = 0.001
-dt2 = 0.01
-tf = 10
+dt2 = 10
+tf = 1000
+workers = 10
+
 
 def equivalent_simulations():
     discharge_times = []
-    for i in range(5):
-        # Execute the simulation
-        utils.execute_granular_dynamics_jar(
-            W, L, M, N, R, r, m, A, k_n, k_t, dt, dt2, tf, g, output_directory
-        )
 
-        # Load the discharge times
-        discharge_times.append(utils.load_discharges(f'{output_directory}/discharges.txt'))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [
+            executor.submit(
+                utils.execute_granular_dynamics_jar,
+                W,
+                L,
+                M,
+                N,
+                R,
+                r,
+                mass,
+                A,
+                k_n,
+                k_t,
+                dt,
+                dt2,
+                tf,
+                g,
+                i,
+                output_directory,
+            )
+            for i in range(5)
+        ]
+
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                dir = future.result()
+
+                exit_times = utils.load_discharges(f"{dir}/discharges.txt")
+
+                discharge_times.append(exit_times)
+
+            except Exception as e:
+                print(f"Error: {e}")
 
     # Plot the cumulative discharges in one graph
-    plots.plot_cumulative_discharges(discharge_times, f'{plot_directory}/equivalent_simulations.png')
+    plots.plot_cumulative_discharges(
+        discharge_times, f"{plot_directory}/equivalent_simulations.png"
+    )
 
+    try:
+        shutil.rmtree(output_directory)
+    except Exception as e:
+        print(f"Error: {e}")
 
 
 def calculate_flow_rate(exit_times, steady_state_time):
@@ -47,7 +84,6 @@ def calculate_flow_rate(exit_times, steady_state_time):
     return slope  # El valor de Q
 
 
-
 def flow_rate_and_resistence_vs_acceleration(start_A, stop_A, qty_steps):
     A_values = np.linspace(start_A, stop_A, qty_steps)
     mean_flow_rates = []
@@ -55,42 +91,94 @@ def flow_rate_and_resistence_vs_acceleration(start_A, stop_A, qty_steps):
     mean_resistences = []
     std_resistences = []
 
-    for A in A_values:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [
+            executor.submit(
+                utils.execute_granular_dynamics_jar,
+                W,
+                L,
+                M,
+                N,
+                R,
+                r,
+                mass,
+                a,
+                k_n,
+                k_t,
+                dt,
+                dt2,
+                tf,
+                g,
+                i,
+                output_directory,
+            )
+            for i in range(5)
+            for a in A_values
+        ]
+
+        results = {}
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                dir = future.result()
+
+                exit_times = utils.load_discharges(f"{dir}/discharges.txt")
+
+                config = utils.load_config(f"{dir}/config.txt")
+                a = config["acceleration"]
+
+                flow_rate = calculate_flow_rate(exit_times, tf / 2)
+
+                resistence = (mass * a) / flow_rate
+
+                if a not in results:
+                    results[a] = [(flow_rate, resistence)]
+                else:
+                    results[a].append((flow_rate, resistence))
+
+            except Exception as e:
+                print(f"Error: {e}")
+
+    mean_flow_rates = []
+    std_flow_rates = []
+    mean_resistences = []
+    std_resistences = []
+
+    for a in A_values:
         flow_rates = []
         resistences = []
-        for _ in range(5):
-            # Ejecutar la simulación
-            utils.execute_granular_dynamics_jar(
-                W, L, M, N, R, r, m, A, k_n, k_t, dt, dt2, tf, g, output_directory
-            )
-
-            # Cargar los tiempos de salida
-            exit_times = utils.load_discharges(f'{output_directory}/discharges.txt')
-
-            # Calcular el caudal
-            flow_rate = calculate_flow_rate(exit_times, tf / 2)
+        for flow_rate, resistence in results[a]:
             flow_rates.append(flow_rate)
-
-            # Calcular la resistencia
-            resistence = (m * A) / flow_rate
             resistences.append(resistence)
 
-        # Calcular la media y la desviación estándar de los caudales
         mean_flow_rates.append(np.mean(flow_rates))
         std_flow_rates.append(np.std(flow_rates))
-
-        # Calcular la media y la desviación estándar de las resistencias
         mean_resistences.append(np.mean(resistences))
         std_resistences.append(np.std(resistences))
 
-    # Aceleracion en m/s²
     A_values = A_values / 100
 
     # Graficar Q vs A0 con barras de error
-    plots.plot_X_vs_Y(A_values, mean_flow_rates, std_flow_rates, f'{plot_directory}/flow_rate_vs_acceleration.png', "Aceleración (m/s²)", "Caudal (partículas/s)")
+    plots.plot_X_vs_Y(
+        A_values,
+        mean_flow_rates,
+        std_flow_rates,
+        f"{plot_directory}/flow_rate_vs_acceleration.png",
+        "Aceleración (m/s²)",
+        "Caudal (partículas/s)",
+    )
+    plots.plot_X_vs_Y(
+        A_values,
+        mean_resistences,
+        std_resistences,
+        f"{plot_directory}/resistence_vs_acceleration.png",
+        "Aceleración (m/s²)",
+        "Resistencia (kg/s)",
+    )
 
-    # Graficar R vs A0 con barras de error
-    plots.plot_X_vs_Y(A_values, mean_resistences, std_resistences, f'{plot_directory}/resistence_vs_acceleration.png', "Aceleración (m/s²)", "Resistencia (kg/s)")
+    try:
+        shutil.rmtree(output_directory)
+    except Exception as e:
+        print(f"Error: {e}")
 
 
 def flow_rate_and_resistence_vs_obstacles(start_M, stop_M, qty_steps):
@@ -101,43 +189,111 @@ def flow_rate_and_resistence_vs_obstacles(start_M, stop_M, qty_steps):
     mean_resistences = []
     std_resistences = []
 
-    for M in M_values:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [
+            executor.submit(
+                utils.execute_granular_dynamics_jar,
+                W,
+                L,
+                obstacle_count,
+                N,
+                R,
+                r,
+                mass,
+                A,
+                k_n,
+                k_t,
+                dt,
+                dt2,
+                tf,
+                g,
+                i,
+                output_directory,
+            )
+            for i in range(5)
+            for obstacle_count in M_values
+        ]
+
+        results = {}
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                dir = future.result()
+
+                exit_times = utils.load_discharges(f"{dir}/discharges.txt")
+
+                config = utils.load_config(f"{dir}/config.txt")
+                m = config["obstacle_count"]
+
+                flow_rate = calculate_flow_rate(exit_times, tf / 2)
+
+                resistence = (m * A) / flow_rate
+
+                if m not in results:
+                    results[m] = [(flow_rate, resistence)]
+                else:
+                    results[m].append((flow_rate, resistence))
+
+            except Exception as e:
+                print(f"Error: {e}")
+
+    mean_flow_rates = []
+    std_flow_rates = []
+    mean_resistences = []
+    std_resistences = []
+
+    for obstacle_count in M_values:
         flow_rates = []
         resistences = []
-        for _ in range(5):
-            # Ejecutar la simulación
-            utils.execute_granular_dynamics_jar(
-                W, L, M, N, R, r, m, A, k_n, k_t, dt, dt2, tf, g, output_directory
-            )
-
-            # Cargar los tiempos de salida
-            exit_times = utils.load_discharges(f'{output_directory}/discharges.txt')
-
-            # Calcular el caudal
-            flow_rate = calculate_flow_rate(exit_times, tf / 2)
+        for flow_rate, resistence in results[obstacle_count]:
             flow_rates.append(flow_rate)
-
-            # Calcular la resistencia
-            resistence = (m * A) / flow_rate
             resistences.append(resistence)
 
-        # Calcular la media y la desviación estándar de los caudales
         mean_flow_rates.append(np.mean(flow_rates))
         std_flow_rates.append(np.std(flow_rates))
-
-        # Calcular la media y la desviación estándar de las resistencias
         mean_resistences.append(np.mean(resistences))
         std_resistences.append(np.std(resistences))
 
     # Graficar Q vs M con barras de error
-    plots.plot_X_vs_Y(M_values, mean_flow_rates, std_flow_rates, f'{plot_directory}/flow_rate_vs_obstacles.png', "Número de obstáculos", "Caudal (partículas/s)")
+    plots.plot_X_vs_Y(
+        M_values,
+        mean_flow_rates,
+        std_flow_rates,
+        f"{plot_directory}/flow_rate_vs_obstacles.png",
+        "Número de obstáculos",
+        "Caudal (partículas/s)",
+    )
 
-    # Graficar R vs M con barras de error
-    plots.plot_X_vs_Y(M_values, mean_resistences, std_resistences, f'{plot_directory}/resistence_vs_obstacles.png', "Número de obstáculos", "Resistencia (kg/s)")
+    # Graficar R vs M con barras de Erroe
+    plots.plot_X_vs_Y(
+        M_values,
+        mean_resistences,
+        std_resistences,
+        f"{plot_directory}/resistence_vs_obstacles.png",
+        "Número de obstáculos",
+        "Resistencia (kg/s)",
+    )
+
+    try:
+        shutil.rmtree(output_directory)
+    except Exception as e:
+        print(f"Error: {e}")
 
 
+if __name__ == "__main__":
+    """config = utils.load_config('data/default/config.txt')"""
+    """ snapshots2 = utils.load_snapshots('data/default/snapshots.txt') """
+    """ obstacles = utils.load_obstacles('data/default/obstacles.txt') """
 
-if __name__ == '__main__':
+    # plots.animate_simulation(config, obstacles, snapshots, 'data/default/animation.mp4')
+
+    # data/cim
+    """ config = utils.load_config('data/cim/config.txt') """
+    """ snapshots1 = utils.load_snapshots('data/cim/snapshots.txt') """
+    """ obstacles = utils.load_obstacles('data/cim/obstacles.txt') """
+
+    # plots.animate_simulation(config, obstacles, snapshots, 'data/cim/animation.mp4')
+
+    # plots.animate_comparison(config, obstacles, snapshots1, snapshots2, "data/comparison.mp4")
     equivalent_simulations()
     flow_rate_and_resistence_vs_acceleration(0.5, 5, 4)
-    flow_rate_and_resistence_vs_obstacles(80, 120, 4)
+    flow_rate_and_resistence_vs_obstacles(40, 80, 4)

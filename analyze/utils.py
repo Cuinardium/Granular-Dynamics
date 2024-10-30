@@ -62,7 +62,7 @@ def execute_granular_dynamics_jar(
         obstacle_radius, particle_radius, particle_mass,
         acceleration, normal_k, tangential_k,
         integration_step, snapshot_step, max_time, g,
-        output_directory, jar_path="../target/granullar-dynamics-1.0-jar-with-dependencies.jar"
+        iteration, output_directory, jar_path="../target/granullar-dynamics-1.0-jar-with-dependencies.jar"
 ):
     """
     Parameters:
@@ -82,6 +82,8 @@ def execute_granular_dynamics_jar(
     - output_directory (str): Directory for output files.
     - jar_path (str): Path to the JAR file.
     """
+    # unique dir with amount of obstacles, iteration, and acceleration
+    output_directory = f"{output_directory}/obstacles_{obstacle_count}_iteration_{iteration}_acceleration_{acceleration}"
 
     command = [
         "java", "-jar", jar_path,
@@ -107,3 +109,5 @@ def execute_granular_dynamics_jar(
         print("JAR executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error executing JAR: {e}")
+
+    return output_directory
