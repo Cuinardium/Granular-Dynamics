@@ -22,8 +22,7 @@ public class App {
             System.exit(1);
         }
 
-        // TODO: seed
-        Random random = new Random(1);
+        Random random = new Random(config.getSeed());
 
         System.out.println("Generating obstacles...");
 

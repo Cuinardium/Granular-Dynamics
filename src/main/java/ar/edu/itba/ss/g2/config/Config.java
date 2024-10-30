@@ -1,5 +1,7 @@
 package ar.edu.itba.ss.g2.config;
 
+import java.util.Random;
+
 public class Config {
 
     // Dimension Entorno
@@ -28,6 +30,9 @@ public class Config {
 
     // Output
     private final String outputDirectory; // out
+    
+    // Seed
+    private final long seed;
 
     public double getWidth() {
         return width;
@@ -89,6 +94,10 @@ public class Config {
         return outputDirectory;
     }
 
+    public long getSeed() {
+        return seed;
+    }
+
     private Config(Builder builder) {
         this.width = builder.width;
         this.length = builder.length;
@@ -105,6 +114,7 @@ public class Config {
         this.snapshotStep = builder.snapshotStep;
         this.maxTime = builder.maxTime;
         this.outputDirectory = builder.outputDirectory;
+        this.seed = builder.seed;
     }
 
     public static class Builder {
@@ -123,6 +133,8 @@ public class Config {
         private double snapshotStep;
         private double maxTime;
         private String outputDirectory;
+
+        private long seed = System.currentTimeMillis(); 
 
         public Builder width(double width) {
             this.width = width;
@@ -196,6 +208,11 @@ public class Config {
 
         public Builder outputDirectory(String outputDirectory) {
             this.outputDirectory = outputDirectory;
+            return this;
+        }
+
+        public Builder seed(long seed) {
+            this.seed = seed;
             return this;
         }
 

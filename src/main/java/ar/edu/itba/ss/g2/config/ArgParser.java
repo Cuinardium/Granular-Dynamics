@@ -29,7 +29,8 @@ public class ArgParser {
                     new Option("dt", "integration-step", true, "Integration step"),
                     new Option("dt2", "snapshot-step", true, "Snapshot step"),
                     new Option("tf", "max-time", true, "Max time"),
-                    new Option("out", "output-directory", true, "Output directory"));
+                    new Option("out", "output-directory", true, "Output directory"),
+                    new Option("s", "seed", true, "Seed for random number generation"));
 
     private final String[] args;
     private final Options options;
@@ -330,6 +331,20 @@ public class ArgParser {
         } else {
             System.err.println("Output Directory is required");
             return null;
+        }
+
+        // seed
+        if (cmd.hasOption("seed")) {
+            long seed;
+
+            try {
+                seed = Long.parseLong(cmd.getOptionValue("seed"));
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid Seed: " + cmd.getOptionValue("seed"));
+                return null;
+            }
+
+            builder.seed(seed);
         }
 
         return builder.build();
