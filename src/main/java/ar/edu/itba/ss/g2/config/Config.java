@@ -134,7 +134,7 @@ public class Config {
         private double maxTime;
         private String outputDirectory;
 
-        private long seed = System.currentTimeMillis(); 
+        private long seed = new Random().nextLong();
 
         public Builder width(double width) {
             this.width = width;
