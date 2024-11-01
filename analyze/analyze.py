@@ -285,20 +285,20 @@ def flow_rate_and_resistence_vs_obstacles(start_M, stop_M, qty_steps):
 
 
 if __name__ == "__main__":
-    """config = utils.load_config('data/default/config.txt')"""
-    """ snapshots2 = utils.load_snapshots('data/default/snapshots.txt') """
-    """ obstacles = utils.load_obstacles('data/default/obstacles.txt') """
+    config = utils.load_config('data/cim/config.txt')
+    snapshots2 = utils.load_snapshots('data/cim/snapshots.txt')
+    obstacles = utils.load_obstacles('data/cim/obstacles.txt')
 
-    # plots.animate_simulation(config, obstacles, snapshots, 'data/default/animation.mp4')
+    plots.animate_simulation(config, obstacles, snapshots2, 'data/cim/animation.mp4')
 
     # data/cim
-    """ config = utils.load_config('data/cim/config.txt') """
-    """ snapshots1 = utils.load_snapshots('data/cim/snapshots.txt') """
-    """ obstacles = utils.load_obstacles('data/cim/obstacles.txt') """
+    config = utils.load_config('data/sim/config.txt')
+    snapshots1 = utils.load_snapshots('data/sim/snapshots.txt')
+    obstacles = utils.load_obstacles('data/sim/obstacles.txt')
 
-    # plots.animate_simulation(config, obstacles, snapshots, 'data/cim/animation.mp4')
+    plots.animate_simulation(config, obstacles, snapshots1, 'data/sim/animation.mp4')
 
     # plots.animate_comparison(config, obstacles, snapshots1, snapshots2, "data/comparison.mp4")
-    equivalent_simulations()
-    flow_rate_and_resistence_vs_acceleration(0.5, 5, 4)
-    flow_rate_and_resistence_vs_obstacles(40, 80, 4)
+    #equivalent_simulations()
+    #flow_rate_and_resistence_vs_acceleration(0.5, 5, 4)
+    #flow_rate_and_resistence_vs_obstacles(40, 80, 4)

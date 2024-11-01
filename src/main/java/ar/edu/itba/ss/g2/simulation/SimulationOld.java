@@ -17,6 +17,7 @@ public class SimulationOld {
 
     private final List<Particle> particles;
     private final List<Particle> obstacles;
+    private final List<Particle> obstaclesAndParticles;
 
     private List<Double>[] previousForces;
     private List<Double>[] currentForces;
@@ -56,6 +57,9 @@ public class SimulationOld {
 
         this.particles = particles;
         this.obstacles = obstacles;
+        this.obstaclesAndParticles = new ArrayList<>(particles.size() + obstacles.size());
+        this.obstaclesAndParticles.addAll(particles);
+        this.obstaclesAndParticles.addAll(obstacles);
 
         int snapshotCount = (int) Math.ceil(maxTime / snapshotStep);
         this.snapshots = new ArrayList<>(snapshotCount);
@@ -156,7 +160,7 @@ public class SimulationOld {
         double[] forces = new double[2];
 
         for (Particle neighbour : neighbours) {
-            if (neighbour == particle) {
+            if (neighbour.equals(particle)) {
                 continue;
             }
 
@@ -275,7 +279,7 @@ public class SimulationOld {
             particle.setX(x);
 
             // Check overlap with other particles
-            for (Particle other : particles) {
+            for (Particle other : obstaclesAndParticles) {
                 if (other != particle) {
                     double dx = particle.getX() - other.getX();
                     double dy = y - other.getY();
@@ -283,22 +287,12 @@ public class SimulationOld {
 
                     if (distance < radius + other.getRadius()) {
                         overlapping = true;
-                        y = radius + Math.random() * (width - 2 * radius); // Try new y position
+                        y =
+                                radius
+                                        + random.nextDouble()
+                                                * (width - 2 * radius); // Try new y position
                         break;
                     }
-                }
-            }
-
-            // Check overlap with obstacles
-            for (Particle obstacle : obstacles) {
-                double dx = particle.getX() - obstacle.getX();
-                double dy = y - obstacle.getY();
-                double distance = Math.sqrt(dx * dx + dy * dy);
-
-                if (distance < radius + obstacle.getRadius()) {
-                    overlapping = true;
-                    y = radius + Math.random() * (length - 2 * radius); // Try new y position
-                    break;
                 }
             }
 

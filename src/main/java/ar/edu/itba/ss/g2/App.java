@@ -52,8 +52,8 @@ public class App {
 
         List<Particle> particles = particleGenerator.generate();
 
-        Simulation simulation =
-                new Simulation(
+        SimulationOld simulation =
+                new SimulationOld(
                         particles,
                         obstacles,
                         config.getWidth(),

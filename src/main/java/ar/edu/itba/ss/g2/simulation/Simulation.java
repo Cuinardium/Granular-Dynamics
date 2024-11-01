@@ -53,8 +53,8 @@ public class Simulation {
         this.particles = particles;
         this.obstacles = obstacles;
         this.obstaclesAndParticles = new ArrayList<>(particles.size() + obstacles.size());
-        this.obstaclesAndParticles.addAll(obstacles);
         this.obstaclesAndParticles.addAll(particles);
+        this.obstaclesAndParticles.addAll(obstacles);
 
         int snapshotCount = (int) Math.ceil(maxTime / snapshotStep);
         this.snapshots = new ArrayList<>(snapshotCount);
