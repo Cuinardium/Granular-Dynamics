@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import json
 import shutil
 from scipy.stats import linregress
 import concurrent.futures
@@ -11,149 +13,24 @@ plot_directory = "data/plots"
 A = 1
 W = 40
 L = 140
-M = 60
+M = 30
 N = 100
 R = 1
 r = 1
 mass = 1
 k_n = 250
 g = k_n / 100
-k_t = 500
+k_t = 125
 dt = 0.001
 dt2 = 10
 tf = 1000
 workers = 16
 
 
-def simulate_equivalent_simulations(num_simulations: int):
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = [
-            executor.submit(
-                utils.execute_granular_dynamics_jar,
-                W,
-                L,
-                M,
-                N,
-                R,
-                r,
-                mass,
-                A,
-                k_n,
-                k_t,
-                dt,
-                dt2,
-                tf,
-                g,
-                i,
-                f'{output_directory}/equivalent/sim_{i}',
-            )
-            for i in range(num_simulations)
-        ]
+def simulate(iterations, a_values, m_values):
+    results = []
 
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                print(f"Error: {e}")
-
-
-def plot_equivalent_simulations(num_simulations: int):
-    # Load results from equivalent simulations
-    discharge_times = []
-
-    for i in range(num_simulations):
-        exit_times = utils.load_discharges(f"{output_directory}/equivalent/sim_{i}/discharges.txt")
-        discharge_times.append(exit_times)
-
-    # Plot the cumulative discharges in one graph
-    plots.plot_cumulative_discharges(
-        discharge_times, f"{plot_directory}/equivalent_simulations.png"
-    )
-
-
-def calculate_flow_rate(exit_times, steady_state_time):
-    # Filtrar la fase de estado estacionario
-    filtered_times = np.array(exit_times)[np.array(exit_times) >= steady_state_time]
-    cumulative_particles = np.arange(1, len(filtered_times) + 1)
-
-    # Regresión lineal para estimar el caudal Q en estado estacionario
-    slope, _, _, _, _ = linregress(filtered_times, cumulative_particles)
-    return slope  # El valor de Q
-
-
-def simulate_flow_rate_vs_acceleration(start_A, stop_A, qty_steps, num_simulations):
-    A_values = np.linspace(start_A, stop_A, qty_steps)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = [
-            executor.submit(
-                utils.execute_granular_dynamics_jar,
-                W,
-                L,
-                M,
-                N,
-                R,
-                r,
-                mass,
-                a,
-                k_n,
-                k_t,
-                dt,
-                dt2,
-                tf,
-                g,
-                i,
-                f'{output_directory}/flow_rate_vs_acceleration/A_{a}/sim_{i}',
-            )
-            for i in range(num_simulations)
-            for a in A_values
-        ]
-
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                future.result()
-            except Exception as e:
-                print(f"Error: {e}")
-
-
-def plot_flow_rate_vs_acceleration(start_A, stop_A, qty_steps, num_simulations):
-    A_values = np.linspace(start_A, stop_A, qty_steps)
-
-    mean_flow_rates = []
-    std_flow_rates = []
-
-    for a in A_values:
-        flow_rates = []
-        for i in range(num_simulations):
-            dir = f'{output_directory}/flow_rate_vs_acceleration/A_{a}/sim_{i}'
-            exit_times = utils.load_discharges(f"{dir}/discharges.txt")
-
-            config = utils.load_config(f"{dir}/config.txt")
-            max_time = config["max_time"]
-
-            flow_rate = calculate_flow_rate(exit_times, max_time / 2)
-
-            flow_rates.append(flow_rate)
-
-        mean_flow_rates.append(np.mean(flow_rates))
-        std_flow_rates.append(np.std(flow_rates))
-
-    A_values = A_values / 100
-
-    # Graficar Q vs A0 con barras de error
-    plots.plot_X_vs_Y(
-        A_values,
-        mean_flow_rates,
-        std_flow_rates,
-        f"{plot_directory}/flow_rate_vs_acceleration.png",
-        "Aceleración (m/s²)",
-        "Caudal (partículas/s)",
-    )
-
-
-
-def simulate_resistence_vs_obstacles(start_M, stop_M, qty_steps, num_simulations):
-    M_values = np.linspace(start_M, stop_M, qty_steps, dtype=int)
+    print("Executing Simulations")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [
@@ -166,7 +43,7 @@ def simulate_resistence_vs_obstacles(start_M, stop_M, qty_steps, num_simulations
                 R,
                 r,
                 mass,
-                A,
+                acceleration,
                 k_n,
                 k_t,
                 dt,
@@ -174,20 +51,190 @@ def simulate_resistence_vs_obstacles(start_M, stop_M, qty_steps, num_simulations
                 tf,
                 g,
                 i,
-                f'{output_directory}/resistence_vs_obstacles/M_{obstacle_count}/sim_{i}',
+                f"{output_directory}/simulations",
             )
-            for i in range(num_simulations)
-            for obstacle_count in M_values
+            for acceleration in a_values
+            for obstacle_count in m_values
+            for i in range(iterations)
         ]
+
+        jobs = len(futures)
+        completed = 0
 
         for future in concurrent.futures.as_completed(futures):
             try:
-                future.result()
+                dir = future.result()
+                print(f"[MAIN {completed+1}/{jobs}] - Simulation completed: {dir}")
+
+                exit_times = utils.load_discharges(f"{dir}/discharges.txt")
+                config = utils.load_config(f"{dir}/config.txt")
+
+                results.append({"exit_times": exit_times, "config": config})
+
+                completed += 1
+
             except Exception as e:
-                print(f"Error: {e}")
+                print(f"[MAIN {completed+1}/{jobs}] - Error: {e}")
+
+    # Save results json dump
+    with open(f"{output_directory}/results.json", "w") as f:
+        print("Saving results")
+        json.dump(results, f)
+
+    # Delete output directory
+    try:
+        print("Deleting output directory")
+        shutil.rmtree(f"{output_directory}/simulations")
+    except Exception as e:
+        print(f"Error: {e}")
 
 
-def plot_flow_rate_and_resistence_vs_obstacles(start_M, stop_M, qty_steps, num_simulations):
+def load_results():
+    with open(f"{output_directory}/results.json", "r") as f:
+        return json.load(f)
+
+
+def plot_equivalent_simulations(results):
+
+    os.makedirs(f"{plot_directory}/equivalent_simulations", exist_ok=True)
+
+    # Load results from equivalent simulations
+    discharge_times = {}
+
+    for result in results:
+        exit_times = result["exit_times"]
+        config = result["config"]
+
+        key = (config["acceleration"], config["obstacle_count"])
+        if key not in discharge_times:
+            discharge_times[key] = []
+
+        discharge_times[key].append(exit_times)
+
+    for key, times in discharge_times.items():
+        acceleration, obstacle_count = key
+        file_name = f"{plot_directory}/equivalent_simulations/A_{acceleration}_M_{obstacle_count}.png"
+
+        plots.plot_cumulative_discharges(
+            times,
+            file_name,
+        )
+
+
+def calculate_flow_rate(exit_times, steady_state_time):
+    # Filtrar la fase de estado estacionario
+    filtered_times = np.array(exit_times)[np.array(exit_times) >= steady_state_time]
+    cumulative_particles = np.arange(1, len(filtered_times) + 1)
+
+    # Regresión lineal para estimar el caudal Q en estado estacionario
+    slope, _, _, _, _ = linregress(filtered_times, cumulative_particles)
+    return slope  # El valor de Q
+
+
+def plot_flow_rate_analysis(results):
+    flow_rates = {}
+
+    for result in results:
+        config = result["config"]
+        obstacles = config["obstacle_count"]
+        max_time = config["max_time"]
+
+        exit_times = result["exit_times"]
+        if len(exit_times) == 0:
+            print(
+                f"Error: empty exit times for {obstacles} obstacles, {config['acceleration']} acceleration, {config['max_time']} max time"
+            )
+            continue
+
+        flow_rate = calculate_flow_rate(exit_times, max_time / 2)
+
+        if obstacles not in flow_rates:
+            flow_rates[obstacles] = {}
+
+        acceleration = config["acceleration"]
+
+        if acceleration not in flow_rates[obstacles]:
+            flow_rates[obstacles][acceleration] = []
+
+        flow_rates[obstacles][acceleration].append(flow_rate)
+
+    mean_flow_rates = {}
+    std_flow_rates = {}
+
+    for obstacles, rates in flow_rates.items():
+        mean_flow_rates[obstacles] = {}
+        std_flow_rates[obstacles] = {}
+        for acceleration, rates in rates.items():
+            mean_flow_rates[obstacles][acceleration] = np.mean(rates)
+            std_flow_rates[obstacles][acceleration] = np.std(rates)
+
+
+
+    resitences = {}
+
+    for obstacle_count, mean_flow_rate in mean_flow_rates.items():
+        accelerations = list(mean_flow_rate.keys())
+        mean_flow_rate = list(mean_flow_rate.values())
+
+        # Sort the data by acceleration
+        accelerations, mean_flow_rate = zip(
+            *sorted(zip(accelerations, mean_flow_rate))
+        )
+
+        # Regresión lineal, slope = 1/resistence
+        slope, _, _, _, _ = linregress(accelerations, mean_flow_rate)
+        
+        resistence = 1 / slope
+
+        resitences[obstacle_count] = resistence
+
+
+    os.makedirs(f"{plot_directory}/analysis", exist_ok=True)
+
+    plots.plot_resistence_vs_obstacle_count(
+        resitences,
+        f"{plot_directory}/analysis/resistence_vs_obstacle_count.png",
+    )
+
+    plots.plot_flow_rate_vs_acceleration(
+        mean_flow_rates,
+        std_flow_rates,
+        f"{plot_directory}/analysis/flow_rate_vs_acceleration.png",
+    )
+
+    # mean  flow rates: [obstacle_count] -> [acceleration] -> flow rate
+    # now i want flow rates: [axxeleration] -> [obstacle_count] -> flow rate
+
+    inverted_mean_flow_rates = {}
+    inverted_std_flow_rates = {}
+
+    for obstacle_count, mean_flow_rate in mean_flow_rates.items():
+        for acceleration, rate in mean_flow_rate.items():
+            if acceleration not in inverted_mean_flow_rates:
+                inverted_mean_flow_rates[acceleration] = {}
+                inverted_std_flow_rates[acceleration] = {}
+
+            inverted_mean_flow_rates[acceleration][obstacle_count] = rate
+            inverted_std_flow_rates[acceleration][obstacle_count] = std_flow_rates[obstacle_count][acceleration]
+
+    accelerations = list(inverted_mean_flow_rates.keys())
+    selected_accelerations = accelerations[::2]
+
+    inverted_mean_flow_rates = {k: inverted_mean_flow_rates[k] for k in selected_accelerations}
+    inverted_std_flow_rates = {k: inverted_std_flow_rates[k] for k in selected_accelerations}
+
+    plots.plot_flow_rate_vs_obstacle_count(
+        inverted_mean_flow_rates,
+        inverted_std_flow_rates,
+        f"{plot_directory}/analysis/flow_rate_vs_obstacle_count.png",
+    )
+
+
+
+
+def plot_flow_rate_and_resistence_vs_obstacles(
+    start_M, stop_M, qty_steps, num_simulations
+):
     M_values = np.linspace(start_M, stop_M, qty_steps, dtype=int)
 
     mean_flow_rates = []
@@ -212,10 +259,8 @@ def plot_flow_rate_and_resistence_vs_obstacles(start_M, stop_M, qty_steps, num_s
             flow_rate = calculate_flow_rate(exit_times, max_time / 2)
             flow_rates.append(flow_rate)
 
-
             resistence = (particle_mass * acceleration) / flow_rate
             resistences.append(resistence)
-
 
         mean_flow_rates.append(np.mean(flow_rates))
         std_flow_rates.append(np.std(flow_rates))
@@ -266,23 +311,23 @@ if __name__ == "__main__":
     # plots.animate_simulation(config, obstacles, snapshots, 'data/cim/animation.mp4')
 
     # plots.animate_comparison(config, obstacles, snapshots1, snapshots2, "data/comparison.mp4")
-    
+
     num_simulations = 5
 
-    simulate_equivalent_simulations(num_simulations)
-    plot_equivalent_simulations(num_simulations)
-
     start_A = 0.5
-    stop_A = 5
-    qty_steps = 4
-
-    simulate_flow_rate_vs_acceleration(start_A, stop_A, qty_steps, num_simulations)
-    plot_flow_rate_vs_acceleration(start_A, stop_A, qty_steps, num_simulations)
-
+    stop_A = 10
     start_M = 40
     stop_M = 80
+    qty_steps = 10
+    iterations = 5
 
-    simulate_resistence_vs_obstacles(start_M, stop_M, qty_steps, num_simulations)
-    plot_flow_rate_and_resistence_vs_obstacles(start_M, stop_M, qty_steps, num_simulations)
+    a_values = np.linspace(start_A, stop_A, qty_steps)
+    m_values = np.linspace(start_M, stop_M, 5, dtype=int)
+
+    #simulate(iterations, a_values, m_values)
+    results = load_results()
+
+    plot_flow_rate_analysis(results)
+    plot_equivalent_simulations(results)
 
     # delete_output_directory()

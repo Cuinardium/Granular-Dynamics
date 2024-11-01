@@ -83,7 +83,7 @@ def execute_granular_dynamics_jar(
     - jar_path (str): Path to the JAR file.
     """
     # unique dir with amount of obstacles, iteration, and acceleration
-    # output_directory = f"{output_directory}/obstacles_{obstacle_count}_iteration_{iteration}_acceleration_{acceleration}"
+    output_directory = f"{output_directory}/obstacles_{obstacle_count}_iteration_{iteration}_acceleration_{acceleration}"
 
     command = [
         "java", "-jar", jar_path,
@@ -105,9 +105,10 @@ def execute_granular_dynamics_jar(
     ]
 
     try:
-        subprocess.run(command, check=True)
-        print("JAR executed successfully.")
+        print(f"[WORKER] - Running simulation, a={acceleration}, m={obstacle_count}, i={iteration}")
+        subprocess.run(command, check=True, capture_output=True)
+        print(f"[WORKER] - Simulation Finished, a={acceleration}, m={obstacle_count}, i={iteration}")
     except subprocess.CalledProcessError as e:
-        print(f"Error executing JAR: {e}")
+        print(f"[WORKER] - Error for a={acceleration}, m={obstacle_count}, i={iteration}: {e}")
 
     return output_directory
