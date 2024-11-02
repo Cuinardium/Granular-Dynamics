@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 import os
 import json
 import shutil
@@ -7,30 +8,27 @@ import concurrent.futures
 import utils
 import plots
 
-output_directory = "data/analysis"
-plot_directory = "data/plots"
-
-A = 1
-W = 40
-L = 140
-M = 30
-N = 100
-R = 1
-r = 1
-mass = 1
-k_n = 250
-g = k_n / 100
-k_t = 125
-dt = 0.001
-dt2 = 10
-tf = 1000
-workers = 16
 
 
-def simulate(iterations, a_values, m_values):
+
+def simulate(iterations, a_values, m_values, output_directory):
     results = []
 
     print("Executing Simulations")
+
+    W = 40
+    L = 140
+    N = 100
+    R = 1
+    r = 1
+    mass = 1
+    k_n = 250
+    g = k_n / 100
+    k_t = 0
+    dt = 0.001
+    dt2 = 10
+    tf = 1000
+    workers = 16
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [
@@ -81,20 +79,17 @@ def simulate(iterations, a_values, m_values):
         print("Saving results")
         json.dump(results, f)
 
-    # Delete output directory
     try:
-        print("Deleting output directory")
         shutil.rmtree(f"{output_directory}/simulations")
     except Exception as e:
         print(f"Error: {e}")
 
-
-def load_results():
+def load_results(output_directory):
     with open(f"{output_directory}/results.json", "r") as f:
         return json.load(f)
 
 
-def plot_equivalent_simulations(results):
+def plot_equivalent_simulations(results, plot_directory):
 
     os.makedirs(f"{plot_directory}/equivalent_simulations", exist_ok=True)
 
@@ -131,7 +126,7 @@ def calculate_flow_rate(exit_times, steady_state_time):
     return slope  # El valor de Q
 
 
-def plot_flow_rate_analysis(results):
+def plot_flow_rate_analysis(results, plot_directory):
     flow_rates = {}
 
     for result in results:
@@ -231,72 +226,45 @@ def plot_flow_rate_analysis(results):
 
 
 
-
-def plot_flow_rate_and_resistence_vs_obstacles(
-    start_M, stop_M, qty_steps, num_simulations
-):
-    M_values = np.linspace(start_M, stop_M, qty_steps, dtype=int)
-
-    mean_flow_rates = []
-    std_flow_rates = []
-    mean_resistences = []
-    std_resistences = []
-
-    for M in M_values:
-        flow_rates = []
-        resistences = []
-        for i in range(num_simulations):
-            dir = f"{output_directory}/resistence_vs_obstacles/M_{M}/sim_{i}"
-
-            exit_times = utils.load_discharges(f"{dir}/discharges.txt")
-
-            config = utils.load_config(f"{dir}/config.txt")
-            obstacle_count = config["obstacle_count"]
-            particle_mass = config["particle_mass"]
-            acceleration = config["acceleration"]
-            max_time = config["max_time"]
-
-            flow_rate = calculate_flow_rate(exit_times, max_time / 2)
-            flow_rates.append(flow_rate)
-
-            resistence = (particle_mass * acceleration) / flow_rate
-            resistences.append(resistence)
-
-        mean_flow_rates.append(np.mean(flow_rates))
-        std_flow_rates.append(np.std(flow_rates))
-
-        mean_resistences.append(np.mean(resistences))
-        std_resistences.append(np.std(resistences))
-
-    # Graficar Q vs M con barras de error
-    plots.plot_X_vs_Y(
-        M_values,
-        mean_flow_rates,
-        std_flow_rates,
-        f"{plot_directory}/flow_rate_vs_obstacles.png",
-        "Número de obstáculos",
-        "Caudal (partículas/s)",
-    )
-
-    # Graficar R vs M con barras de Erroe
-    plots.plot_X_vs_Y(
-        M_values,
-        mean_resistences,
-        std_resistences,
-        f"{plot_directory}/resistence_vs_obstacles.png",
-        "Número de obstáculos",
-        "Resistencia (kg/s)",
-    )
-
-
-def delete_output_directory():
-    try:
-        shutil.rmtree(output_directory)
-    except Exception as e:
-        print(f"Error: {e}")
-
-
 if __name__ == "__main__":
+
+    # python analyze.py [generate|plot] directory
+    args = sys.argv
+
+    if len(args) < 3:
+        print("Usage: python analyze.py [generate|plot] directory")
+        exit()
+
+    
+    if args[1] == "generate":
+        output_directory = args[2]
+        num_simulations = 5
+
+        start_A = 0.5
+        stop_A = 10
+        start_M = 40
+        stop_M = 80
+        qty_steps = 10
+        iterations = 5
+
+        a_values = np.linspace(start_A, stop_A, qty_steps)
+        m_values = np.linspace(start_M, stop_M, 5, dtype=int)
+
+        simulate(iterations, a_values, m_values, f"{output_directory}")
+    elif args[1] == "plot":
+        plot_directory = args[2]
+
+        results = load_results(plot_directory)
+
+        plot_directory = f"{plot_directory}/plots"
+
+        plot_flow_rate_analysis(results, plot_directory)
+        plot_equivalent_simulations(results, plot_directory)
+    else:
+        print("Usage: python analyze.py [generate|plot] directory")
+        exit()
+
+
     """config = utils.load_config('data/default/config.txt')"""
     """ snapshots2 = utils.load_snapshots('data/default/snapshots.txt') """
     """ obstacles = utils.load_obstacles('data/default/obstacles.txt') """
@@ -312,22 +280,8 @@ if __name__ == "__main__":
 
     # plots.animate_comparison(config, obstacles, snapshots1, snapshots2, "data/comparison.mp4")
 
-    num_simulations = 5
 
-    start_A = 0.5
-    stop_A = 10
-    start_M = 40
-    stop_M = 80
-    qty_steps = 10
-    iterations = 5
 
-    a_values = np.linspace(start_A, stop_A, qty_steps)
-    m_values = np.linspace(start_M, stop_M, 5, dtype=int)
 
-    #simulate(iterations, a_values, m_values)
-    results = load_results()
 
-    plot_flow_rate_analysis(results)
-    plot_equivalent_simulations(results)
 
-    # delete_output_directory()
