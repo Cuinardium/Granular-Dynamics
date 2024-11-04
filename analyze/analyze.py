@@ -3,12 +3,9 @@ import sys
 import os
 import json
 import shutil
-from scipy.stats import linregress
 import concurrent.futures
 import utils
 import plots
-
-
 
 
 def simulate(iterations, a_values, m_values, output_directory):
@@ -24,8 +21,8 @@ def simulate(iterations, a_values, m_values, output_directory):
     mass = 1
     k_n = 250
     g = k_n / 100
-    k_t = 0
-    dt = 0.001
+    k_t = 500
+    dt = 0.0005
     dt2 = 10
     tf = 1000
     workers = 16
@@ -84,6 +81,7 @@ def simulate(iterations, a_values, m_values, output_directory):
     except Exception as e:
         print(f"Error: {e}")
 
+
 def load_results(output_directory):
     with open(f"{output_directory}/results.json", "r") as f:
         return json.load(f)
@@ -92,6 +90,7 @@ def load_results(output_directory):
 def plot_equivalent_simulations(results, plot_directory):
 
     os.makedirs(f"{plot_directory}/equivalent_simulations", exist_ok=True)
+
 
     # Load results from equivalent simulations
     discharge_times = {}
@@ -121,13 +120,45 @@ def calculate_flow_rate(exit_times, steady_state_time):
     filtered_times = np.array(exit_times)[np.array(exit_times) >= steady_state_time]
     cumulative_particles = np.arange(1, len(filtered_times) + 1)
 
-    # Regresión lineal para estimar el caudal Q en estado estacionario
-    slope, _, _, _, _ = linregress(filtered_times, cumulative_particles)
-    return slope  # El valor de Q
+    # Q = deltay / deltax
+    slope = (cumulative_particles[-1] - cumulative_particles[0]) / (
+        filtered_times[-1] - filtered_times[0]
+    )
+
+    return slope
+
+def calculate_resistence(flow_rates, accelerations, mass):
+
+    # Metodo teorica 0, Q = f(a,R) = (a * m ) / R
+    r_values = np.linspace(0.5, 3.5, 300)
+    squared_errors = {}
+
+    best_resistence = None
+
+    for r in r_values:
+        squared_error = 0
+        for a, q in zip(accelerations, flow_rates):
+            predicted_q = (a * mass) / r
+            squared_error += (q - predicted_q) ** 2
+
+        squared_errors[r] = squared_error
+
+        if best_resistence is None or squared_error < squared_errors[best_resistence]:
+            best_resistence = r
+
+    return best_resistence, squared_errors
+
+
 
 
 def plot_flow_rate_analysis(results, plot_directory):
     flow_rates = {}
+
+    if len(results) == 0:
+        print("Error: no results to analyze")
+        return
+
+    mass = results[0]["config"]["particle_mass"]
 
     for result in results:
         config = result["config"]
@@ -163,25 +194,40 @@ def plot_flow_rate_analysis(results, plot_directory):
             mean_flow_rates[obstacles][acceleration] = np.mean(rates)
             std_flow_rates[obstacles][acceleration] = np.std(rates)
 
-
-
     resitences = {}
+
+
+    os.makedirs(f"{plot_directory}/best_resistence", exist_ok=True)
 
     for obstacle_count, mean_flow_rate in mean_flow_rates.items():
         accelerations = list(mean_flow_rate.keys())
         mean_flow_rate = list(mean_flow_rate.values())
+        std_flow_rate = list(std_flow_rates[obstacle_count].values())
 
         # Sort the data by acceleration
-        accelerations, mean_flow_rate = zip(
-            *sorted(zip(accelerations, mean_flow_rate))
+        accelerations, mean_flow_rate = zip(*sorted(zip(accelerations, mean_flow_rate)))
+
+        best_resistence, squared_errors = calculate_resistence(mean_flow_rate, accelerations, mass)
+
+        os.makedirs(f"{plot_directory}/best_resistence/M_{obstacle_count}", exist_ok=True)
+
+        plots.plot_flow_rate_with_best_resistence_vs_acceleration(
+            accelerations,
+            mean_flow_rate,
+            std_flow_rate,
+            best_resistence,
+            mass,
+            f"{plot_directory}/best_resistence/M_{obstacle_count}/best_resistence.png",
         )
 
-        # Regresión lineal, slope = 1/resistence
-        slope, _, _, _, _ = linregress(accelerations, mean_flow_rate)
-        
-        resistence = 1 / slope
+        plots.plot_cuadriatic_error_vs_resistence(
+            squared_errors,
+            best_resistence,
+            f"{plot_directory}/best_resistence/M_{obstacle_count}/cuadratic_error.png",
+        )
 
-        resitences[obstacle_count] = resistence
+        resitences[obstacle_count] = best_resistence
+        
 
 
     os.makedirs(f"{plot_directory}/analysis", exist_ok=True)
@@ -210,20 +256,25 @@ def plot_flow_rate_analysis(results, plot_directory):
                 inverted_std_flow_rates[acceleration] = {}
 
             inverted_mean_flow_rates[acceleration][obstacle_count] = rate
-            inverted_std_flow_rates[acceleration][obstacle_count] = std_flow_rates[obstacle_count][acceleration]
+            inverted_std_flow_rates[acceleration][obstacle_count] = std_flow_rates[
+                obstacle_count
+            ][acceleration]
 
     accelerations = list(inverted_mean_flow_rates.keys())
-    selected_accelerations = accelerations[::2]
+    selected_accelerations = accelerations
 
-    inverted_mean_flow_rates = {k: inverted_mean_flow_rates[k] for k in selected_accelerations}
-    inverted_std_flow_rates = {k: inverted_std_flow_rates[k] for k in selected_accelerations}
+    inverted_mean_flow_rates = {
+        k: inverted_mean_flow_rates[k] for k in selected_accelerations
+    }
+    inverted_std_flow_rates = {
+        k: inverted_std_flow_rates[k] for k in selected_accelerations
+    }
 
     plots.plot_flow_rate_vs_obstacle_count(
         inverted_mean_flow_rates,
         inverted_std_flow_rates,
         f"{plot_directory}/analysis/flow_rate_vs_obstacle_count.png",
     )
-
 
 
 if __name__ == "__main__":
@@ -235,20 +286,19 @@ if __name__ == "__main__":
         print("Usage: python analyze.py [generate|plot] directory")
         exit()
 
-    
     if args[1] == "generate":
         output_directory = args[2]
         num_simulations = 5
 
         start_A = 0.5
-        stop_A = 10
+        stop_A = 5
         start_M = 40
         stop_M = 80
-        qty_steps = 10
+        qty_steps = 5
         iterations = 5
 
         a_values = np.linspace(start_A, stop_A, qty_steps)
-        m_values = np.linspace(start_M, stop_M, 5, dtype=int)
+        m_values = np.linspace(start_M, stop_M, qty_steps, dtype=int)
 
         simulate(iterations, a_values, m_values, f"{output_directory}")
     elif args[1] == "plot":
@@ -264,7 +314,6 @@ if __name__ == "__main__":
         print("Usage: python analyze.py [generate|plot] directory")
         exit()
 
-
     """config = utils.load_config('data/default/config.txt')"""
     """ snapshots2 = utils.load_snapshots('data/default/snapshots.txt') """
     """ obstacles = utils.load_obstacles('data/default/obstacles.txt') """
@@ -279,9 +328,3 @@ if __name__ == "__main__":
     # plots.animate_simulation(config, obstacles, snapshots, 'data/cim/animation.mp4')
 
     # plots.animate_comparison(config, obstacles, snapshots1, snapshots2, "data/comparison.mp4")
-
-
-
-
-
-

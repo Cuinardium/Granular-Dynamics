@@ -3,18 +3,6 @@ import matplotlib.animation as animation
 import numpy as np
 
 
-def plot_X_vs_Y(Y_values, mean_X, std_X, file_path, X_label, Y_label):
-    plt.figure(figsize=(10, 6))
-    plt.errorbar(Y_values, mean_X, yerr=std_X, fmt="-o", capsize=5)
-
-    plt.xlabel(X_label)
-    plt.ylabel(Y_label)
-
-    plt.grid(True)
-    plt.savefig(file_path)
-    plt.close()
-
-
 def plot_cumulative_discharges(discharge_times_list, file_path="discharges.png"):
     plt.figure(figsize=(10, 6))
 
@@ -108,10 +96,10 @@ def plot_flow_rate_vs_acceleration(
             yerr=std_flow_rate,
             fmt="-o",
             capsize=5,
-            label=f"{obstacle_count} obstaculos",
+            label=f"{obstacle_count:.0f} obstaculos",
         )
 
-    plt.xlabel("Aceleración (cm/s^2)")
+    plt.xlabel("Aceleración (cm/s$^2$)")
     plt.ylabel("Caudal (partículas/s)")
 
     plt.legend()
@@ -150,7 +138,7 @@ def plot_flow_rate_vs_obstacle_count(
             yerr=std_flow_rate,
             fmt="-o",
             capsize=5,
-            label=f"{acceleration} cm/s^2",
+            label=f"{acceleration:.1f} cm/$s^2$",
         )
 
     plt.xlabel("Cantidad de obstáculos")
@@ -183,6 +171,81 @@ def plot_resistence_vs_obstacle_count(
     plt.grid(True)
     plt.savefig(file_path)
     plt.close()
+
+
+def plot_flow_rate_with_best_resistence_vs_acceleration(
+    accelerations,
+    mean_flow_rate,
+    std_flow_rate,
+    best_resistence,
+    mass,
+    output_file,
+):
+
+    plt.figure(figsize=(10, 6))
+
+    plt.errorbar(
+        accelerations,
+        mean_flow_rate,
+        yerr=std_flow_rate,
+        fmt="-o",
+        capsize=5,
+        label=f"Observables",
+    )
+
+    plt.xlabel("Aceleración (cm/s$^2$)")
+    plt.ylabel("Caudal (partículas/s)")
+
+    # Q = (m * a) / (R)
+
+    # Calculate the theoretical flow rate
+    theoretical_flow_rate = [
+        (mass * acceleration) / best_resistence for acceleration in accelerations
+    ]
+    plt.plot(
+        accelerations,
+        theoretical_flow_rate,
+        label=f"Q = (m * a) / R, R = {best_resistence:.2f} g/cm",
+    )
+
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(output_file)
+    plt.close()
+
+
+def plot_cuadriatic_error_vs_resistence(squared_errors, best_resistence, output_file):
+    plt.figure(figsize=(10, 6))
+
+    resistences = list(squared_errors.keys())
+    squared_errors = list(squared_errors.values())
+
+    plt.plot(resistences, squared_errors, marker="o", markersize=3, linestyle=":")
+
+    plt.xlabel("Resistencia (g/cm)")
+    plt.ylabel("Error (1/$s^2$)")
+
+    plt.axvline(
+        x=best_resistence,
+        color="red",
+        linestyle="--",
+        label=f"Mejor R: {best_resistence:.2f} g/cm",
+    )
+
+    plt.legend()
+
+    plt.xlim(best_resistence - 0.5, best_resistence + 0.5)
+    squared_errors_in_range = [
+        squared_error
+        for resistance, squared_error in zip(resistences, squared_errors)
+        if best_resistence - 0.5 <= resistance <= best_resistence + 0.5
+    ]
+    plt.ylim(0,max(squared_errors_in_range) + min(squared_errors_in_range))
+
+    plt.grid(True)
+    plt.savefig(output_file)
+    plt.close()
+
 
 def animate_simulation(config, obstacles, snapshots, file_path="animation.mp4"):
     fig, ax = plt.subplots(figsize=(10, 10))
