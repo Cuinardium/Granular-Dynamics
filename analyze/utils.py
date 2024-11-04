@@ -47,7 +47,7 @@ def load_config(file_path):
         "width", "length", "obstacle_count", "particle_count",
         "obstacle_radius", "particle_radius", "particle_mass",
         "acceleration", "normal_k", "tangential_k",
-        "integration_step", "snapshot_step", "max_time"
+        "integration_step", "snapshot_step", "max_time", "seed"
     ]
     config = {}
     with open(file_path, 'r') as f:

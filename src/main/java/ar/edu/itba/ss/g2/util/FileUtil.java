@@ -36,6 +36,7 @@ public class FileUtil {
             writer.write(config.getIntegrationStep() + "\n");
             writer.write(config.getSnapshotStep() + "\n");
             writer.write(config.getMaxTime() + "\n");
+            writer.write(config.getSeed() + "\n");
         }
     }
 
