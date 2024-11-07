@@ -3,7 +3,6 @@ package ar.edu.itba.ss.g2.simulation;
 import ar.edu.itba.ss.g2.model.Particle;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Simulation {
 
@@ -11,7 +10,6 @@ public class Simulation {
     private static final int Y = 1;
 
     private final List<Particle> particles;
-    private final List<Particle> obstacles;
     private final List<Particle> obstaclesAndParticles;
 
     private List<Double>[] previousForces;
@@ -51,7 +49,6 @@ public class Simulation {
             Random random) {
 
         this.particles = particles;
-        this.obstacles = obstacles;
         this.obstaclesAndParticles = new ArrayList<>(particles.size() + obstacles.size());
         this.obstaclesAndParticles.addAll(obstacles);
         this.obstaclesAndParticles.addAll(particles);
@@ -121,9 +118,7 @@ public class Simulation {
                 cellIndexMethod.getNeighbours(obstaclesAndParticles);
 
         // Constant acceleration
-        for (int i = 0; i < particles.size(); i++) {
-            Particle particle = particles.get(i);
-
+        for (Particle particle : particles) {
             double[] force = {acceleration * particle.getMass(), 0};
 
 
@@ -193,16 +188,8 @@ public class Simulation {
         return forces;
     }
 
-    // - Obstacle
-
-    private double[] calculateObstacleCollision(Particle particle, Set<Particle> neighbours) {
-        // TODO: Creo que es lo mismo porque el obstaculo tiene velocidad 0
-        return calculateParticleCollision(particle, neighbours);
-    }
-
     // - Horizontal Wall
 
-    // TODO: Dampening
     private double[] calculateHorizontalWallCollision(Particle particle) {
         double[] forces = new double[2];
 
@@ -230,29 +217,10 @@ public class Simulation {
         return forces;
     }
 
-    // ======= Neighbours ================
-
-    private Map<Particle, Set<Particle>> getParticleNeighbours() {
-        // TODO: Cell index method
-        Set<Particle> particleSet = new HashSet<>(particles);
-        return particleSet.stream()
-                .collect(Collectors.toMap(particle -> particle, particle -> particleSet));
-    }
-
-    private Map<Particle, Set<Particle>> getObstacleNeighbours() {
-
-        // TODO: Cell index method
-        Set<Particle> obstacleSet = new HashSet<>(obstacles);
-        return particles.stream()
-                .collect(Collectors.toMap(particle -> particle, particle -> obstacleSet));
-    }
-
     // ======= Discharges ================
 
     private void checkDischarges() {
-        for (int i = 0; i < particles.size(); i++) {
-            Particle particle = particles.get(i);
-
+        for (Particle particle : particles) {
             if (particle.getX() > length) {
                 moveToBeginning(particle);
                 dischargeTimes.add(currentTime);
