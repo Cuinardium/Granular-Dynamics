@@ -237,9 +237,14 @@ def plot_flow_rate_analysis(results, plot_directory):
         f"{plot_directory}/analysis/resistence_vs_obstacle_count.png",
     )
 
+    # Only the first, third and fifth obstacle count
+    obstacle_counts = list(mean_flow_rates.keys())
+    selected_obstacle_counts = obstacle_counts[::2]
+
+
     plots.plot_flow_rate_vs_acceleration(
-        mean_flow_rates,
-        std_flow_rates,
+        {k: mean_flow_rates[k] for k in selected_obstacle_counts},
+        {k: std_flow_rates[k] for k in selected_obstacle_counts},
         f"{plot_directory}/analysis/flow_rate_vs_acceleration.png",
     )
 
@@ -261,7 +266,7 @@ def plot_flow_rate_analysis(results, plot_directory):
             ][acceleration]
 
     accelerations = list(inverted_mean_flow_rates.keys())
-    selected_accelerations = accelerations
+    selected_accelerations = accelerations[::2]
 
     inverted_mean_flow_rates = {
         k: inverted_mean_flow_rates[k] for k in selected_accelerations
@@ -276,6 +281,67 @@ def plot_flow_rate_analysis(results, plot_directory):
         f"{plot_directory}/analysis/flow_rate_vs_obstacle_count.png",
     )
 
+def animate(output_directory):
+
+    combinations = [
+        (1.6, 60), (5.0, 60), 
+        (1.6, 40), (1.6, 80)
+    ]
+
+    W = 40
+    L = 140
+    N = 100
+    R = 1
+    r = 1
+    mass = 1
+    k_n = 250
+    g = k_n / 100
+    k_t = 500
+    dt = 0.0005
+    dt2 = 0.05
+    tf = 1000
+
+    os.makedirs(f"{output_directory}/simulations", exist_ok=True)
+    os.makedirs(f"{output_directory}/animations", exist_ok=True)
+
+    for acceleration, obstacle_count in combinations:
+
+        print(f"Simulating A: {acceleration} M: {obstacle_count}")
+
+        directory = utils.execute_granular_dynamics_jar(
+            W,
+            L,
+            obstacle_count,
+            N,
+            R,
+            r,
+            mass,
+            acceleration,
+            k_n,
+            k_t,
+            dt,
+            dt2,
+            tf,
+            g,
+            0,
+            f"{output_directory}/simulations",
+        )
+
+        snapshots = utils.load_snapshots(f"{directory}/snapshots.txt")
+        obstacles = utils.load_obstacles(f"{directory}/obstacles.txt")
+        config = utils.load_config(f"{directory}/config.txt")
+
+        print(f"Animating A: {acceleration} M: {obstacle_count}")
+
+        plots.animate_simulation(config, obstacles, snapshots, f"{output_directory}/animations/A_{acceleration}_M_{obstacle_count}.mp4")
+
+
+    try:
+        shutil.rmtree(f"{output_directory}/simulations")
+    except Exception as e:
+        print(f"Error: {e}")
+
+
 
 if __name__ == "__main__":
 
@@ -283,7 +349,7 @@ if __name__ == "__main__":
     args = sys.argv
 
     if len(args) < 3:
-        print("Usage: python analyze.py [generate|plot] directory")
+        print("Usage: python analyze.py [generate|plot|animate] directory")
         exit()
 
     if args[1] == "generate":
@@ -292,8 +358,8 @@ if __name__ == "__main__":
 
         start_A = 0.5
         stop_A = 5
-        start_M = 40
-        stop_M = 80
+        start_M = 80
+        stop_M = 120
         qty_steps = 5
         iterations = 5
 
@@ -310,21 +376,8 @@ if __name__ == "__main__":
 
         plot_flow_rate_analysis(results, plot_directory)
         plot_equivalent_simulations(results, plot_directory)
+    elif args[1] == "animate":
+        animate(args[2])
     else:
-        print("Usage: python analyze.py [generate|plot] directory")
+        print("Usage: python analyze.py [generate|plot|animate] directory")
         exit()
-
-    """config = utils.load_config('data/default/config.txt')"""
-    """ snapshots2 = utils.load_snapshots('data/default/snapshots.txt') """
-    """ obstacles = utils.load_obstacles('data/default/obstacles.txt') """
-
-    # plots.animate_simulation(config, obstacles, snapshots, 'data/default/animation.mp4')
-
-    # data/cim
-    """ config = utils.load_config('data/cim/config.txt') """
-    """ snapshots1 = utils.load_snapshots('data/cim/snapshots.txt') """
-    """ obstacles = utils.load_obstacles('data/cim/obstacles.txt') """
-
-    # plots.animate_simulation(config, obstacles, snapshots, 'data/cim/animation.mp4')
-
-    # plots.animate_comparison(config, obstacles, snapshots1, snapshots2, "data/comparison.mp4")
