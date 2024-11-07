@@ -15,11 +15,11 @@ def plot_cumulative_discharges(discharge_times_list, file_path="discharges.png")
         # Plot cumulative discharges over time
         plt.plot(discharge_times, cumulative_discharges, linestyle="-")
 
-    plt.xlabel("Tiempo (s)")
-    plt.ylabel("Descargas")
+    plt.xlabel("t [s]")
+    plt.ylabel("Salidas")
 
     plt.grid(True)
-    plt.savefig(file_path)
+    plt.savefig(file_path, transparent=True)
     plt.close()
 
 
@@ -63,7 +63,7 @@ def plot_initial_state(
 
     plt.gca().set_aspect("equal", adjustable="box")
 
-    plt.savefig(file_path)
+    plt.savefig(file_path, transparent=True)
 
 
 # Mean and st flow rates are a dict of obtacle_count -> dict of acceleration -> mean/stdev
@@ -99,12 +99,12 @@ def plot_flow_rate_vs_acceleration(
             label=f"{obstacle_count:.0f} obstaculos",
         )
 
-    plt.xlabel("Aceleración (cm/s$^2$)")
-    plt.ylabel("Caudal (partículas/s)")
+    plt.xlabel("$A_0 \\, [\\frac{cm}{s^2}$]")
+    plt.ylabel("$Q \\, [\\frac{1}{s}]$")
 
     plt.legend()
     plt.grid(True)
-    plt.savefig(output_file)
+    plt.savefig(output_file, transparent=True)
     plt.close()
 
 
@@ -138,15 +138,15 @@ def plot_flow_rate_vs_obstacle_count(
             yerr=std_flow_rate,
             fmt="-o",
             capsize=5,
-            label=f"{acceleration:.1f} cm/$s^2$",
+            label=f"{acceleration:.1f} " + "$\\frac{cm}{s^2}$",
         )
 
-    plt.xlabel("Cantidad de obstáculos")
-    plt.ylabel("Caudal (partículas/s)")
+    plt.xlabel("M")
+    plt.ylabel("$Q \\, [\\frac{1}{s}]$")
 
     plt.legend()
     plt.grid(True)
-    plt.savefig(output_file)
+    plt.savefig(output_file, transparent=True)
     plt.close()
 
 
@@ -165,11 +165,11 @@ def plot_resistence_vs_obstacle_count(
         "-o",
     )
 
-    plt.xlabel("Cantidad de obstáculos")
-    plt.ylabel("Resistencia (g/cm)")
+    plt.xlabel("M")
+    plt.ylabel("$R \\, [\\frac{g \\cdot cm}{s}]$")
 
     plt.grid(True)
-    plt.savefig(file_path)
+    plt.savefig(file_path, transparent=True)
     plt.close()
 
 
@@ -193,8 +193,8 @@ def plot_flow_rate_with_best_resistence_vs_acceleration(
         label=f"Observables",
     )
 
-    plt.xlabel("Aceleración (cm/s$^2$)")
-    plt.ylabel("Caudal (partículas/s)")
+    plt.xlabel("$A_0 \\, [\\frac{cm}{s^2}$]")
+    plt.ylabel("$Q  \\, [\\frac{1}{s}]$")
 
     # Q = (m * a) / (R)
 
@@ -205,12 +205,12 @@ def plot_flow_rate_with_best_resistence_vs_acceleration(
     plt.plot(
         accelerations,
         theoretical_flow_rate,
-        label=f"Q = (m * a) / R, R = {best_resistence:.2f} g/cm",
+        label="$Q = \\frac{[A_0 \\cdot m]}{R}$, " + f"R = {best_resistence:.2f} " +"$[\\frac{g \\cdot cm}{s}]$",
     )
 
     plt.legend()
     plt.grid(True)
-    plt.savefig(output_file)
+    plt.savefig(output_file, transparent=True)
     plt.close()
 
 
@@ -222,14 +222,14 @@ def plot_cuadriatic_error_vs_resistence(squared_errors, best_resistence, output_
 
     plt.plot(resistences, squared_errors, marker="o", markersize=3, linestyle=":")
 
-    plt.xlabel("Resistencia (g/cm)")
-    plt.ylabel("Error (1/$s^2$)")
+    plt.xlabel("$R \\, [\\frac{g \\cdot cm}{s}]$")
+    plt.ylabel("$Error \\, [\\frac{1}{s^2}]$")
 
     plt.axvline(
         x=best_resistence,
         color="red",
         linestyle="--",
-        label=f"Mejor R: {best_resistence:.2f} g/cm",
+        label=f"Mejor R: {best_resistence:.2f} " + "$[\\frac{g \\cdot cm}{s}]$",
     )
 
     plt.legend()
@@ -243,7 +243,7 @@ def plot_cuadriatic_error_vs_resistence(squared_errors, best_resistence, output_
     plt.ylim(0,max(squared_errors_in_range) + min(squared_errors_in_range))
 
     plt.grid(True)
-    plt.savefig(output_file)
+    plt.savefig(output_file, transparent=True)
     plt.close()
 
 
@@ -263,7 +263,7 @@ def animate_simulation(config, obstacles, snapshots, file_path="animation.mp4"):
 
     # Create a list of circles for obstacles
     obstacle_circles = [
-        plt.Circle((x, y), config["obstacle_radius"], color="red", alpha=0.5)
+        plt.Circle((x, y), config["obstacle_radius"], color="black", alpha=0.8)
         for (x, y) in obstacles
     ]
     for circle in obstacle_circles:
@@ -288,7 +288,7 @@ def animate_simulation(config, obstacles, snapshots, file_path="animation.mp4"):
         # Add new particle circles for the current frame
         for x, y in particles:
             circle = plt.Circle(
-                (x, y), config["particle_radius"], color="blue", alpha=0.7
+                (x, y), config["particle_radius"], color="goldenrod", alpha=0.7
             )
             particle_circles.append(circle)
             ax.add_artist(circle)
