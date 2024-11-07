@@ -22,10 +22,10 @@ def simulate(iterations, a_values, m_values, output_directory):
     k_n = 250
     g = k_n / 100
     k_t = 500
-    dt = 0.0005
+    dt = 0.001
     dt2 = 10
     tf = 1000
-    workers = 16
+    workers = 15
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [
@@ -130,7 +130,7 @@ def calculate_flow_rate(exit_times, steady_state_time):
 def calculate_resistence(flow_rates, accelerations, mass):
 
     # Metodo teorica 0, Q = f(a,R) = (a * m ) / R
-    r_values = np.linspace(0.5, 3.5, 300)
+    r_values = np.linspace(1.5, 9.5, 800)
     squared_errors = {}
 
     best_resistence = None
@@ -138,7 +138,7 @@ def calculate_resistence(flow_rates, accelerations, mass):
     for r in r_values:
         squared_error = 0
         for a, q in zip(accelerations, flow_rates):
-            predicted_q = (a * mass) / r
+            predicted_q = ((a - accelerations[0]) * mass) / r + flow_rates[0]
             squared_error += (q - predicted_q) ** 2
 
         squared_errors[r] = squared_error
@@ -358,8 +358,8 @@ if __name__ == "__main__":
 
         start_A = 0.5
         stop_A = 5
-        start_M = 80
-        stop_M = 120
+        start_M = 40
+        stop_M = 80
         qty_steps = 5
         iterations = 5
 

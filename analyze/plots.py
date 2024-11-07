@@ -94,7 +94,7 @@ def plot_flow_rate_vs_acceleration(
             accelerations,
             mean_flow_rate,
             yerr=std_flow_rate,
-            fmt="-o",
+            fmt=":o",
             capsize=5,
             label=f"{obstacle_count:.0f} obstaculos",
         )
@@ -136,7 +136,7 @@ def plot_flow_rate_vs_obstacle_count(
             obstacle_counts,
             mean_flow_rate,
             yerr=std_flow_rate,
-            fmt="-o",
+            fmt=":o",
             capsize=5,
             label=f"{acceleration:.1f} " + "$\\frac{cm}{s^2}$",
         )
@@ -162,7 +162,7 @@ def plot_resistence_vs_obstacle_count(
     plt.plot(
         list(resistences.keys()),
         list(resistences.values()),
-        "-o",
+        ":o",
     )
 
     plt.xlabel("M")
@@ -188,7 +188,7 @@ def plot_flow_rate_with_best_resistence_vs_acceleration(
         accelerations,
         mean_flow_rate,
         yerr=std_flow_rate,
-        fmt="-o",
+        fmt="o",
         capsize=5,
         label=f"Observables",
     )
@@ -200,12 +200,19 @@ def plot_flow_rate_with_best_resistence_vs_acceleration(
 
     # Calculate the theoretical flow rate
     theoretical_flow_rate = [
-        (mass * acceleration) / best_resistence for acceleration in accelerations
+        (mass * (acceleration - accelerations[0])) / best_resistence + mean_flow_rate[0]
+        for acceleration in accelerations
     ]
     plt.plot(
         accelerations,
         theoretical_flow_rate,
-        label="$Q = \\frac{[A_0 \\cdot m]}{R}$, " + f"R = {best_resistence:.2f} " +"$[\\frac{g \\cdot cm}{s}]$",
+        label="$Q = \\frac{[(A_0 - "
+        + f"{accelerations[0]:.2f}"
+        + " \\, \\frac{cm}{s^2}) \\cdot m]}{R} + $"
+        + f"{mean_flow_rate[0]:.2f}"
+        + "$ \\, \\frac{1}{s^2} $, "
+        + f"R = {best_resistence:.2f} "
+        + "$[\\frac{g \\cdot cm}{s}]$",
     )
 
     plt.legend()
@@ -240,7 +247,7 @@ def plot_cuadriatic_error_vs_resistence(squared_errors, best_resistence, output_
         for resistance, squared_error in zip(resistences, squared_errors)
         if best_resistence - 0.5 <= resistance <= best_resistence + 0.5
     ]
-    plt.ylim(0,max(squared_errors_in_range) + min(squared_errors_in_range))
+    plt.ylim(0, max(squared_errors_in_range) + min(squared_errors_in_range))
 
     plt.grid(True)
     plt.savefig(output_file, transparent=True)
