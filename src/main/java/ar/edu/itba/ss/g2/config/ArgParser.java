@@ -359,7 +359,7 @@ public class ArgParser {
         formatter.setWidth(120);
 
         String commandLineSyntax =
-                "java -jar granullar-dynamics-1.0-jar-with-dependencies.jar [options]";
+                "java -jar granular-dynamics-1.0-jar-with-dependencies.jar [options]";
 
         formatter.printHelp(commandLineSyntax, options);
     }

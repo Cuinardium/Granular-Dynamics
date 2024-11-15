@@ -4,10 +4,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>ar.edu.itba.ss.g2</groupId>
-  <artifactId>granullar-dynamics</artifactId>
+  <artifactId>granular-dynamics</artifactId>
   <version>1.0</version>
 
-  <name>granullar-dynamics</name>
+  <name>granular-dynamics</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
 
